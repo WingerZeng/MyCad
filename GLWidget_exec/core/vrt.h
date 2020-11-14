@@ -1,0 +1,66 @@
+#pragma once
+
+// Global Include Files
+#include <type_traits>
+#include <algorithm>
+#include <cinttypes>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <string>
+#include <vector>
+#include <assert.h>
+#include <string.h>
+#include <QOpenGLFunctions_3_3_Core>
+
+#ifndef BUILD_STATIC
+# if defined(GLWIDGET_LIB)
+#  define GLWIDGET_EXPORT Q_DECL_EXPORT
+# else
+#  define GLWIDGET_EXPORT Q_DECL_IMPORT
+# endif
+#else
+# define GLWIDGET_EXPORT
+#endif
+
+//Global Types
+#define OPENGLCLASS QOpenGLFunctions_3_3_Core
+typedef float Float;
+////Global Constants
+//#define MaxFloat std::numeric_limits<Float>::max()
+//#define Infinity std::numeric_limits<Float>::infinity()
+
+namespace vrt {
+	// Global Forward Declarations
+	template <typename T>
+	class Vector2;
+	template <typename T>
+	class Vector3;
+	template <typename T>
+	class Point3;
+	template <typename T>
+	class Point2;
+	template <typename T>
+	class Normal3;
+	template <typename T>
+	class Bound2;
+	template <typename T>
+	class Bound3;
+	class Transform;
+
+	class Scene;
+
+#ifdef FLOAT_AS_DOUBLE
+	typedef double Float;
+#else
+	typedef float Float;
+#endif
+
+	// Global Constants
+	static Float MaxFloat = std::numeric_limits<Float>::max();
+	static Float Infinity = std::numeric_limits<Float>::infinity();
+	static Float MachineEpsilon = (std::numeric_limits<Float>::epsilon() * 0.5);
+	static int MAX_LIGHT_COUNT = 10;
+	static Float PI = 3.14159265358979323846;
+}
