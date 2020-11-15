@@ -42,12 +42,12 @@ namespace vrt {
 			return typeT(dat/f);
 		}
 		//#PERF1 下面这些类型转换后续需要优化，可以把模板类换成宏定义
-		typeT& operator+=(const typeT &v) const {
+		typeT& operator+=(const typeT &v){
 			DCHECK(!v.HasNaNs());
 			dat += v.dat;
 			return *(typeT*)(this);
 		}
-		typeT& operator-=(const typeT &v) const {
+		typeT& operator-=(const typeT &v){
 			DCHECK(!v.HasNaNs());
 			dat -= v.dat;
 			return *(typeT*)(this);
@@ -108,7 +108,7 @@ namespace vrt {
 			dat << val, val;
 			DCHECK(!HasNaNs());
 		}
-		bool HasNaNs() {
+		bool HasNaNs() const{
 			return isNaN((*this)[0]) || isNaN((*this)[1]);
 		}
 		elemT operator[](int i) const {
@@ -162,7 +162,7 @@ namespace vrt {
 			dat << val, val, val;
 			DCHECK(!HasNaNs());
 		}
-		bool HasNaNs() {
+		bool HasNaNs()  const {
 			return isNaN((*this)[0]) || isNaN((*this)[1]) || isNaN((*this)[2]);
 		}
 		elemT operator[](int i) const {

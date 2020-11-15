@@ -43,12 +43,6 @@
     <ClCompile Include="glrender\axis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glrender\PArrow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="glrender\PPolygon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="glrender\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -67,12 +61,6 @@
     <ClCompile Include="ui\qconsole.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="glrender\PLines.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="glrender\PPoint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="softrender\PolygonRasterizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,6 +68,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ui\ProjectMagager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PArrow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PLines.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PPoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PPolygon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PTriMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\Subdivide.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\shaders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primitives\PPolygonMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -105,22 +117,10 @@
     <ClInclude Include="glrender\axis.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="glrender\PArrow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glrender\PPolygon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="lights\Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="core\Singleton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glrender\PLines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glrender\PPoint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="softrender\PolygonRasterizer.h">
@@ -130,6 +130,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="core\vrt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PArrow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PLines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PPolygon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PTriMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\Subdivide.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\shaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives\PPolygonMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

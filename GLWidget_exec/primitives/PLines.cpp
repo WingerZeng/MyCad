@@ -2,6 +2,7 @@
 #include "PPolygon.h"
 #include "utilities.h"
 #include "PaintInformation.h"
+#include "shaders.h"
 namespace vrt{
 	
 	PLines::~PLines()
@@ -19,7 +20,6 @@ namespace vrt{
 			pts_.push_back(pts.y());
 			pts_.push_back(pts.z());
 		}
-		if (!compileVrtShader(lineShaderProgram, vertexShaderSource_Mesh, geoShaderSource_Line, fragmentShaderSource_Mesh)) return;
 
 		vao.create();
 		vao.bind();
@@ -28,9 +28,9 @@ namespace vrt{
 		vbo.allocate(&pts_[0], pts_.size() * sizeof(Float));
 
 		int attr = -1;
-		attr = lineShaderProgram.attributeLocation("aPos");
-		lineShaderProgram.setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-		lineShaderProgram.enableAttributeArray(attr);
+		attr = LineShader::ptr()->attributeLocation("aPos");
+		LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		LineShader::ptr()->enableAttributeArray(attr);
 	}
 
 	void PLines::paint(PaintInfomation* info)
@@ -39,19 +39,19 @@ namespace vrt{
 
 		// #PERF2 改了vao，着色器可以不用重分配么？
 		vao.bind();
-		lineShaderProgram.bind();
-		lineShaderProgram.setUniformValue("modelMat", QMatrix4x4());
-		lineShaderProgram.setUniformValue("viewMat", info->viewMat);
-		lineShaderProgram.setUniformValue("projMat", info->projMat);
-		lineShaderProgram.setUniformValue("ourColor",QVector4D(color().x(),color().y(),color().z(), 1.0f));
-		lineShaderProgram.setUniformValue("u_viewportSize", info->width, info->height);
-		lineShaderProgram.setUniformValue("u_thickness", GLfloat(info->lineWidth));
+		LineShader::ptr()->bind();
+		LineShader::ptr()->setUniformValue("modelMat", QMatrix4x4());
+		LineShader::ptr()->setUniformValue("viewMat", info->viewMat);
+		LineShader::ptr()->setUniformValue("projMat", info->projMat);
+		LineShader::ptr()->setUniformValue("ourColor",QVector4D(color().x(),color().y(),color().z(), 1.0f));
+		LineShader::ptr()->setUniformValue("u_viewportSize", info->width, info->height);
+		LineShader::ptr()->setUniformValue("u_thickness", GLfloat(info->lineWidth));
 		if(isloop)
 			glDrawArrays(GL_LINE_LOOP, 0, pts_.size() / 3);
 		else
 			glDrawArrays(GL_LINE_STRIP, 0, pts_.size() / 3);
 
-		lineShaderProgram.release();
+		LineShader::ptr()->release();
 		doAfterPaint();
 	}
 

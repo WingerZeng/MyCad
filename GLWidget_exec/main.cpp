@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <math.h>
 #include "glrender/Scene.h"
-#include "glrender/PPolygon.h"
+#include "primitives/PPolygon.h"
 #include "core/CadCore.h"
 #include "ui/MainWindow.h"
 #include "ui/Scripts.h"

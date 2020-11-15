@@ -4,7 +4,6 @@
 #include "glut.h"
 #include <QtGui/QOpenGLVertexArrayObject>
 #include <QtGui/QOpenGLBuffer>
-#include <QtGui/QOpenGLShaderProgram>
 #include "core/vrt.h"
 #include "core/types.h"
 namespace vrt {
@@ -14,10 +13,6 @@ void CALLBACK endCallback();
 void CALLBACK errorCallback(GLenum errorCode);
 class PaintInfomation;
 class bpSolid;
-
-extern const char *vertexShaderSource_Mesh;
-extern const char *geoShaderSource_Line;
-extern const char *fragmentShaderSource_Mesh;
 
 class PPolygon : public GeometryPrimitive
 {
@@ -36,21 +31,14 @@ public:
 	bool checkNormal(Vec3f& normal); //Judge the normal of polygon
 	static PPolygon* currentTessPolygon;
 
-	friend void CALLBACK vertexCallback(GLvoid * vertex);
-	friend void CALLBACK beginCallback(GLenum type);
-	friend void CALLBACK endCallback();
-	friend void CALLBACK errorCallback(GLenum errorCode);
 private:
 	std::vector<std::vector<PType3f>> lps_; // #PERF1 这个成员可以改成指针，用完释放
 	std::vector<std::vector<Float>> boundPts_;
 	std::vector<std::vector<Float>> tessPts_;
 	std::vector<GLenum> drawTypes_;
 
-	QOpenGLShaderProgram shaderProgram;
-	QOpenGLShaderProgram lightShaderProgram;
-	QOpenGLShaderProgram lineShaderProgram; // #PERF1 着色器采用prototype模式优化
-	std::vector<std::shared_ptr<QOpenGLBuffer>> vbos;
-	std::vector<std::shared_ptr<QOpenGLVertexArrayObject>> vaos;
+	std::vector < std::shared_ptr<QOpenGLBuffer >> vbos;
+	std::vector < std::shared_ptr<QOpenGLVertexArrayObject >> vaos;
 
 	std::vector<std::shared_ptr<QOpenGLBuffer>> linevbos;
 	std::vector<std::shared_ptr<QOpenGLVertexArrayObject>> linevaos;
@@ -58,6 +46,8 @@ private:
 	Vector3f normal_;
 };
 
+int tessPolygon(const std::vector<std::vector<PType3f>>& lps, std::vector<std::vector<Float>>* tessPts, std::vector<GLenum>* drawTypes);
+int tessPolygons(const std::vector<std::vector<std::vector<PType3f>>>& plgs, std::vector<std::vector<Float>>* tessPts, std::vector<GLenum>* drawTypes);
 /*Render Interface of solid*/
 std::vector<std::shared_ptr<PPolygon>> solidToPolygons(bpSolid* solid);
 }

@@ -3,10 +3,10 @@
 #include "CadCore.h"
 #include "MainWindow.h"
 #include "glrender/Scene.h"
-#include "glrender/PPolygon.h"
+#include "primitives/PPolygon.h"
 #include "Primitive.h"
-#include "glrender/PPoint.h"
-#include "glrender/PLines.h"
+#include "primitives/PPoint.h"
+#include "primitives/PLines.h"
 namespace vrt{
 
 	CadInterface::CadInterface()

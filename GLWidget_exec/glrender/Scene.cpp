@@ -1,7 +1,7 @@
 #include "Scene.h"
 #include <QOpenGLDebugLogger>
 #include "Primitive.h"
-#include "PPolygon.h"
+#include "primitives/PPolygon.h"
 #include "PaintInformation.h"
 #include "lights/Light.h"
 namespace vrt {
