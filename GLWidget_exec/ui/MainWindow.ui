@@ -85,37 +85,78 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
-    <layout class="QVBoxLayout" name="verticalLayout_3">
+    <layout class="QVBoxLayout" name="verticalLayout_5">
      <property name="leftMargin">
-      <number>3</number>
+      <number>0</number>
      </property>
      <property name="topMargin">
-      <number>3</number>
+      <number>0</number>
      </property>
      <property name="rightMargin">
-      <number>3</number>
+      <number>0</number>
      </property>
      <property name="bottomMargin">
-      <number>3</number>
+      <number>0</number>
      </property>
      <item>
-      <widget class="QTreeWidget" name="treeWidget">
-       <attribute name="headerMinimumSectionSize">
-        <number>150</number>
-       </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>300</number>
-       </attribute>
-       <column>
-        <property name="text">
-         <string>Type</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>ID</string>
-        </property>
-       </column>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Cad Items</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QTreeWidget" name="treeWidget">
+           <attribute name="headerMinimumSectionSize">
+            <number>150</number>
+           </attribute>
+           <attribute name="headerDefaultSectionSize">
+            <number>300</number>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>Type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>ID</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>General Items</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QTreeWidget" name="treeWidget_general">
+           <attribute name="headerMinimumSectionSize">
+            <number>150</number>
+           </attribute>
+           <attribute name="headerDefaultSectionSize">
+            <number>300</number>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>Type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>ID</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
