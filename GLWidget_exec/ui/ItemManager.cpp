@@ -6,6 +6,24 @@
 #include <QTreeWidgetItem>
 namespace vrt{
 
+	ItemManager::ItemManager(QTreeWidget* treeWgt) :treeWgt_(treeWgt)
+	{
+		treeWgt_->connect(treeWgt_, &QTreeWidget::itemSelectionChanged, [this]() {
+			auto list = this->treeWgt_->selectedItems();
+
+			for (const auto& prim : selectedPrims) {
+				prim->setSelected(false);
+			}
+			selectedPrims.clear();
+			for (const auto& item : list) {
+				items_[item->text(1).toInt].prim->setSelected(true);
+				//#PERF5 每次都要重新清空选择项
+				selectedPrims.push_back(items_[item->text(1).toInt].prim);
+			}
+
+			});
+	}
+
 	void ItemManager::addItem(std::shared_ptr<Primitive> prim)
 	{
 		if (isExist(prim))
@@ -28,8 +46,4 @@ namespace vrt{
 
 		//#TODO 删除子节点
 	}
-
-	
-
-
 }

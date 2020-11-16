@@ -45,6 +45,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="ui\ItemManager.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="ui\ProjectMagager.cpp" />
     <ClCompile Include="softrender\PolygonRasterizer.cpp">
       <SubType>
@@ -102,6 +106,10 @@
     <ClInclude Include="primitives\PPolygon.h" />
     <ClInclude Include="lights\Light.h" />
     <ClInclude Include="primitives\Subdivide.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="ui\ItemManager.h">
       <SubType>
       </SubType>
     </ClInclude>

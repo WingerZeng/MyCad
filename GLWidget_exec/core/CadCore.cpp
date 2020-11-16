@@ -370,5 +370,14 @@ namespace vrt{
 		} while (he != firstEg);
 	}
 
+	void bpLoop::getVertices(std::vector<bpVertex*>& vs)
+	{
+		bpHalfEdge* he = firstEg;
+		do {
+			vs.push_back(he->getBeginVtx());
+			he = he->nxt;
+		} while (he != firstEg);
+	}
+
 }
 

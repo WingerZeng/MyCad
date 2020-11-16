@@ -8,12 +8,13 @@
 namespace vrt {
 	class PPolygonMesh : public GeometryPrimitive
 	{
+	public:
 		struct Polygon {
 			std::vector<std::vector<int>> lps_;
 		};
 	public:
-		PPolygonMesh(const std::vector<Polygon>& plgs) //multi loop
-			:plgs_(plgs){
+		PPolygonMesh(const std::vector<Polygon>& plgs,const std::vector<Point3f>& pts) //multi loop
+			:plgs_(plgs),pts_(pts){
 			setColor({ 0.6,0.6,0.6 });
 		};
 

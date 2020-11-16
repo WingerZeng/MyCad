@@ -94,6 +94,9 @@
     <ClCompile Include="primitives\PPolygonMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ui\ItemManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cameras\camera.h">
@@ -154,6 +157,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="primitives\PPolygonMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ItemManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

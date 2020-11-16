@@ -5,8 +5,10 @@
 #include "glrender/Scene.h"
 #include "primitives/PPolygon.h"
 #include "Primitive.h"
+#include "primitives/PPolygonMesh.h"
 #include "primitives/PPoint.h"
 #include "primitives/PLines.h"
+#include "ItemManager.h"
 namespace vrt{
 
 	CadInterface::CadInterface()
@@ -235,6 +237,8 @@ namespace vrt{
 				MAIPTR->getScene()->delPrimitives(it->second);
 				cadSelectedPrims.erase(it);
 			}
+
+			delElement(item->text(0), item->text(1).toInt());
 		}
 		for (int i = item->childCount() - 1; i >=0 ; i--) {
 			cleanTreeItem(item->child(i));
@@ -249,6 +253,20 @@ namespace vrt{
 		for(const auto& vec: cadSelectedPrims)
 		MAIPTR->getScene()->delPrimitives(vec.second);
 		cadSelectedPrims.clear();
+	}
+
+	void CadInterface::delElement(QString typeStr, ElemHandle elem)
+	{
+		if (typeStr == "Solid")
+			delSolid(elem);
+		if (typeStr == "Face")
+			delFace(elem);
+		if (typeStr == "Loop")
+			delLoop(elem);
+		if (typeStr == "Vertex")
+			delVertex(elem);
+		if (typeStr == "HalfEdge")
+			delHalfEdge(elem);
 	}
 
 	void CadInterface::itemSelectionChanged() // #PERF2 目前是选择item改变后，先清空选择Primitive，再构建之，不能增量构建
@@ -361,6 +379,63 @@ namespace vrt{
 		updateSolid(sldid);
 		emit elementChanged(SOLID, sldid);
 		return sldid;
+	}
+
+
+	void CadInterface::removeSolid(SolidHandle sld)
+	{
+		auto it = cadPrimMap.find(sld);
+		if (it != cadPrimMap.end()) {
+			for (const auto& prim : it->second) {
+				MAIPTR->getScene()->delPrimitive(prim->id());
+			}
+			cadPrimMap.erase(it);
+		}
+
+		QTreeWidgetItem* sldItem = handle2Item.find(sld)->second;
+		cleanTreeItem(sldItem, 1);
+		MAIPTR->getCadTreeWidget()->takeTopLevelItem(MAIPTR->getCadTreeWidget()->indexOfTopLevelItem(sldItem));
+		delSolid(sld);
+		MAIPTR->getScene()->update();
+		//#TODO1 释放sld的所有内存空间
+	}
+
+	std::shared_ptr<vrt::PPolygonMesh> CadInterface::solidToPolygonMesh(SolidHandle sld)
+	{
+		std::vector<Point3f> pts;
+		std::vector<PPolygonMesh::Polygon> plgs;
+		std::map<bpVertex*, int> ptid;
+		int count = 0;
+
+		bpSolid* psld = findSolid(sld);
+
+		for (auto it = psld->getVertex()->begin(); it != psld->getVertex()->end(); it++) {
+			bpVertex* pt = *it;
+			pts.push_back(pt->getCoord());
+			if (ptid.find(pt) == ptid.end()) {
+				ptid[pt] = count;
+				++count;
+			}
+		}
+		
+		for (auto it = psld->getFace()->begin(); it != psld->getFace()->end(); it++) {
+			bpFace* fc = *it;
+			plgs.emplace_back();
+			for (auto lpit = fc->Floops()->begin(); lpit != fc->Floops()->end(); lpit++) {
+				plgs.back().lps_.emplace_back();
+				auto& lp = plgs.back().lps_.back();
+				std::vector<bpVertex*> vtcs;
+				(*lpit)->getVertices(vtcs);
+				for (const auto& vt : vtcs) {
+					DCHECK(ptid.find(vt) != ptid.end());
+					lp.push_back(ptid[vt]);
+				}
+			}
+		}
+
+		std::shared_ptr<vrt::PPolygonMesh> plg(new PPolygonMesh(plgs, pts));
+		MAIPTR->ItemMng()->addItem(plg);
+		removeSolid(sld);
 	}
 
 	std::vector<vrt::CadInterface::HalfEdgeHandle> CadInterface::getHalfEdgesOfLoop(LoopHandle lp)

@@ -8,13 +8,6 @@
 class QTreeWidgetItem;
 
 namespace vrt {
-	class bpSolid;
-	class bpFace;
-	class bpLoop;
-	class bpHalfEdge;
-	class bpVertex;
-	class bpEdge;
-	class Primitive;
 
 #define DEF_ELEMENT_OPERATION(Type)\
 	bp##Type* find##Type(##Type##Handle elem){\
@@ -41,7 +34,7 @@ namespace vrt {
 	void del##Type(ElemHandle elem){\
 		std::map<int,bp##Type*>& mp = itop_##Type;\
 		auto it = mp.find(elem);\
-		CHECK(it != mp.end());\
+		if(it != mp.end()) return;\
 		bp##Type* pt= it->second;\
 		mp.erase(it);\
 		ptoi_##Type.erase(pt);\
@@ -80,6 +73,16 @@ namespace vrt {
 		int sweep(SolidHandle solid, FaceHandle face, Vector3f dir, Float dist);
 		SolidHandle createFaceFromLoop(const std::vector<std::vector<Point3f>>& lps);
 
+		/**
+		 * @brief 清空一个Solid的所有信息
+		 */
+		void removeSolid(SolidHandle sld);
+
+		/**
+		 * @brief 抛弃solid的大部分拓扑信息，转化为可视化网格
+		 */
+		std::shared_ptr<PPolygonMesh> solidToPolygonMesh(SolidHandle sld);
+
 		DEF_ELEMENT_OPERATION(Solid);
 		DEF_ELEMENT_OPERATION(Face);
 		DEF_ELEMENT_OPERATION(Loop);
@@ -117,6 +120,7 @@ namespace vrt {
 		void updateLoop(LoopHandle Loop);
 		void cleanTreeItem(QTreeWidgetItem* item,bool atRoot=false);
 		void cleanSelectedPrimitive();
+		void delElement(QString typeStr, ElemHandle elem);
 
 		void itemSelectionChanged(); 
 		void elemSolidSelectionChanged(QTreeWidgetItem* item, bool selected);
@@ -145,7 +149,7 @@ namespace vrt {
 		std::map<bpHalfEdge*, ElemHandle> ptoi_HalfEdge;
 		std::map<bpVertex*, ElemHandle> ptoi_Vertex;
 
-		std::map<ElemHandle, QTreeWidgetItem*> handle2Item;  // #PERF1 只显示TreeWidget中展开的项，不展开的项先不加入TreeWidget
+		std::map<ElemHandle, QTreeWidgetItem*> handle2Item;  // #PERF2 只显示TreeWidget中展开的项，不展开的项先不加入TreeWidget
 		
 		std::map<ElemHandle, std::vector<std::shared_ptr<Primitive>>> cadPrimMap;
 		std::map<QTreeWidgetItem*, std::vector<std::shared_ptr<Primitive>>> cadSelectedPrims;

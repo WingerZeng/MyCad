@@ -172,6 +172,7 @@ namespace vrt{
 			REGISTER_CLASS_CMD_FUNC(kemr, MAIPTR->CadApi(), CadInterface, kemr)
 			REGISTER_CLASS_CMD_FUNC(sweep, MAIPTR->CadApi(), CadInterface, sweep)
 			REGISTER_CLASS_CMD_FUNC(createface, MAIPTR->CadApi(), CadInterface, createFaceFromLoop)
+			REGISTER_CLASS_CMD_FUNC(toPolygonMesh, MAIPTR->CadApi(), CadInterface, solidToPolygonMesh)
 	}
 
 	QString Executor::modifyCmd(const QString& command)

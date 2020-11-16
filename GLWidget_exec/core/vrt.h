@@ -50,6 +50,14 @@ namespace vrt {
 	class Transform;
 
 	class Scene;
+	class bpSolid;
+	class bpFace;
+	class bpLoop;
+	class bpHalfEdge;
+	class bpVertex;
+	class bpEdge;
+	class Primitive;
+	class PPolygonMesh;
 
 #ifdef FLOAT_AS_DOUBLE
 	typedef double Float;

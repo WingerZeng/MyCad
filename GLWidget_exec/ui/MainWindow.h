@@ -16,6 +16,7 @@ class QTreeWidget;
 namespace vrt {
 	class CadInterface;
 	class ScriptList;
+	class ItemManager;
 	class Console;
 	class MainWindow: public QMainWindow, private Singleton<MainWindow>
 	{
@@ -29,8 +30,8 @@ namespace vrt {
 		Console* getConsole();
 		void cadTreeUnselectedAll();
 
-
 		vrt::ScriptList* scplist() const { return ui_scplist; }
+		std::shared_ptr<vrt::ItemManager> ItemMng() const { return itemMng_; }
 	private:
 		MainWindow(QWidget* parent = nullptr);
 		void setupScripts();
@@ -47,6 +48,8 @@ namespace vrt {
 		Ui::MainWindow* ui;
 
 		ScriptList* ui_scplist;
+
+		std::shared_ptr<ItemManager> itemMng_;
 	};
 }
 

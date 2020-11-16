@@ -70,6 +70,8 @@ namespace vrt {
 		vrt::bpFace* Lface() const { return lface; }
 		void printEdgesDebug();
 		void printEloopDebug();
+		
+		void getVertices(std::vector<bpVertex*>& vs);
 	private:
 		bpFace* lface = nullptr;
 		bpHalfEdge* firstEg = nullptr;
