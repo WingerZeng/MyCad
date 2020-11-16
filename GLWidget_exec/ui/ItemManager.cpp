@@ -16,9 +16,9 @@ namespace vrt{
 			}
 			selectedPrims.clear();
 			for (const auto& item : list) {
-				items_[item->text(1).toInt].prim->setSelected(true);
+				items_[item->text(1).toInt()].prim->setSelected(true);
 				//#PERF5 每次都要重新清空选择项
-				selectedPrims.push_back(items_[item->text(1).toInt].prim);
+				selectedPrims.push_back(items_[item->text(1).toInt()].prim);
 			}
 
 			});

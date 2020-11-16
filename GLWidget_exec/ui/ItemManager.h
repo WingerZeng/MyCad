@@ -1,6 +1,7 @@
 #pragma once
 #include "vrt.h"
 #include "types.h"
+#include "Primitive.h"
 class QTreeWidget;
 class QTreeWidgetItem;
 namespace vrt {
@@ -17,6 +18,7 @@ namespace vrt {
 		struct Item
 		{
 			Item(std::shared_ptr<Primitive> pprim, QTreeWidgetItem* item) : prim(pprim), treeItem(item) {};
+			Item() = default;
 			std::shared_ptr<Primitive> prim;
 			QTreeWidgetItem* treeItem;
 			//QConnector
