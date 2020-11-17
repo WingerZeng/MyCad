@@ -98,13 +98,13 @@ namespace vrt {
 		using TypeWithData<dataT, typeT>::TypeWithData;
 		TypeWithSizedRawData() 
 			: TypeWithData<dataT, typeT>() { dat << 0, 0; }
-		TypeWithSizedRawData(elemT xx, elemT yy)
+		explicit TypeWithSizedRawData(elemT xx, elemT yy)
 			: TypeWithData<dataT, typeT>()
 		{
 			dat << xx, yy;
 			DCHECK(!HasNaNs());
 		}
-		TypeWithSizedRawData(elemT val) {
+		explicit TypeWithSizedRawData(elemT val) {
 			dat << val, val;
 			DCHECK(!HasNaNs());
 		}
@@ -152,13 +152,13 @@ namespace vrt {
 		TypeWithSizedRawData() 
 			: TypeWithData<dataT, typeT>() { dat << 0, 0, 0; }
 
-		TypeWithSizedRawData(elemT xx, elemT yy, elemT zz)
+		explicit TypeWithSizedRawData(elemT xx, elemT yy, elemT zz)
 			: TypeWithData<dataT, typeT>() 
 		{
 			dat << xx, yy, zz;
 			DCHECK(!HasNaNs());
 		}
-		TypeWithSizedRawData(elemT val) {
+		explicit TypeWithSizedRawData(elemT val) {
 			dat << val, val, val;
 			DCHECK(!HasNaNs());
 		}

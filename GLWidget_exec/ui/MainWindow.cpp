@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "ui_mainwindow.h"
+#include "ItemManager.h"
 #include "Scripts.h"
 namespace vrt{
 	
@@ -15,6 +16,8 @@ namespace vrt{
 		connect(ui->actionScript_List, &QAction::triggered, [this]() { this->scplist()->show(); });
 
 		setupScripts();
+
+		itemMng_.reset(new ItemManager(ui->treeWidget_general));
 	}
 
 	void MainWindow::setupScripts()

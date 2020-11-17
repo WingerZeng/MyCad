@@ -49,7 +49,14 @@ namespace vrt {
 
 	/* Some template utilities */
 	// 类型名称转字符串
-	template <typename T>	struct TypeName	{		static const char* Get()		{			return typeid(T).name();		}	};
+	template <typename T>
+	struct TypeName
+	{
+		static const char* Get()
+		{
+			return typeid(T).name();
+		}
+	};
 
 	// 通过实参tuple调用给定函数
 	template<typename Func, typename Tup>
@@ -139,9 +146,11 @@ namespace vrt {
 		ftraits::argTuple_t args;
 		int ret = ftraits::TupleConstructor<ftraits::nargs, ftraits::nargs, ftraits::argTuple_t>::construct(args, ios);
 		if (ret) return -1;
+		//#TODO2 现在命令行自动调用不会检查函数是否失败，只检查输入是否正确
 		invoke(func, args);
 		return 0;
-	}
+	}
+
 	// 通过标准库输入调用给的函数
 	template<typename R, typename ...Args>
 	std::vector<std::string> getFuncArgTypeNames(std::function<R(Args...)>& func) {

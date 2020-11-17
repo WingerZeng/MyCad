@@ -29,6 +29,8 @@ namespace vrt {
 		template <class T>
 		void addPrimitives(const std::vector < std::shared_ptr<T>>& prims);
 		static void debugOpenGL();
+
+		int wireFrameMode(bool wfmode);
 	protected:
 		virtual void initializeGL() override;
 		virtual void resizeGL(int w, int h) override;
@@ -58,6 +60,8 @@ namespace vrt {
 		std::vector<std::shared_ptr<Primitive>> primsToAdd;
 
 		static QOpenGLDebugLogger* logger;
+
+		bool wfmode_; // mode of wire frame
 	};
 
 	template<class T>

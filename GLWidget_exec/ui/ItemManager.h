@@ -11,9 +11,17 @@ namespace vrt {
 	public:
 		ItemManager(QTreeWidget* treeWgt);
 
-		void addItem(std::shared_ptr<Primitive> prim);
-		void deleteItem(std::shared_ptr<Primitive> prim);
+		void addItems(std::shared_ptr<Primitive> prim);
+		void addItems(std::vector<std::shared_ptr<Primitive>> prims);
+		std::shared_ptr<Primitive> getItem(int id);
+
+		template<class T>
+		void getItem(int id, std::shared_ptr<T>& prim);
+
+		void delItem(std::shared_ptr<Primitive> prim);
 		inline bool isExist(std::shared_ptr<Primitive> prim);
+
+		int clearSelected();
 
 		struct Item
 		{
@@ -31,6 +39,17 @@ namespace vrt {
 		std::vector<std::shared_ptr<Primitive>> selectedPrims;
 
 	};
+
+	template<class T>
+	void ItemManager::getItem(int id, std::shared_ptr<T>& prim)
+	{
+		if (items_.find(id) == items_.end())
+		{
+			prim = nullptr;
+			return;
+		}
+		prim = std::dynamic_pointer_cast<T>(items_[id].prim);
+	}
 
 	inline bool ItemManager::isExist(std::shared_ptr<Primitive> prim)
 	{

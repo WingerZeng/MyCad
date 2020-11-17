@@ -20,11 +20,11 @@ namespace vrt{
 				//#PERF5 每次都要重新清空选择项
 				selectedPrims.push_back(items_[item->text(1).toInt()].prim);
 			}
-
+			MAIPTR->getScene()->update();
 			});
 	}
 
-	void ItemManager::addItem(std::shared_ptr<Primitive> prim)
+	void ItemManager::addItems(std::shared_ptr<Primitive> prim)
 	{
 		if (isExist(prim))
 			return;
@@ -36,7 +36,20 @@ namespace vrt{
 		MAIPTR->getScene()->addPrimitive(prim);
 	}
 
-	void ItemManager::deleteItem(std::shared_ptr<Primitive> prim)
+	void ItemManager::addItems(std::vector<std::shared_ptr<Primitive>> prims)
+	{
+		for (const auto& prim : prims) {
+			addItems(prim);
+		}
+	}
+
+	std::shared_ptr<Primitive> ItemManager::getItem(int id)
+	{
+		if (items_.find(id) != items_.end()) return nullptr;
+		return items_[id].prim;
+	}
+
+	void ItemManager::delItem(std::shared_ptr<Primitive> prim)
 	{
 		if (!isExist(prim))
 			return;
@@ -44,6 +57,19 @@ namespace vrt{
 		treeWgt_->takeTopLevelItem(treeWgt_->indexOfTopLevelItem(items_[prim->id()].treeItem));
 		MAIPTR->getScene()->delPrimitive(items_[prim->id()].prim->id());
 
+		items_.erase(prim->id());
+
+		//#TODO4 每次更改都消除选择
+		clearSelected();
+
 		//#TODO 删除子节点
 	}
+
+	int ItemManager::clearSelected()
+	{
+		MAIPTR->getScene()->delPrimitives(selectedPrims);
+		selectedPrims.clear();
+		return 0;
+	}
+
 }

@@ -70,7 +70,10 @@ void Scene::paintGL()
 	info.projMat = camera.getProjMatrix();
 	info.viewMat = camera.getViewMatrix();
 	info.lights.push_back(std::shared_ptr<Light>(new ConstantLight(Vector3f(0.5, 0.5, 0.5), Vector3f(0.9, 0.9, 0.9), Vector3f(0.0f), Point3f(4000, 4000, -5000))));
-	info.fillmode = FILL_WIREFRAME;
+	
+	if(wfmode_) info.fillmode = FILL_WIREFRAME;
+	else info.fillmode = FILL;
+
 	info.lineWidth = 1.5f;
 	info.pointSize = 8.0f;
 	info.width = width();
@@ -188,6 +191,12 @@ void Scene::debugOpenGL()
 	for (const QOpenGLDebugMessage &message : messages)
 		qDebug() << message;
 #endif
+}
+
+int Scene::wireFrameMode(bool wfmode)
+{
+	wfmode_ = wfmode;
+	return 0;
 }
 
 void vrt::Scene::addPrimitive(std::shared_ptr<Primitive> prim)

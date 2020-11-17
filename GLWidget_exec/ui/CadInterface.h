@@ -81,7 +81,7 @@ namespace vrt {
 		/**
 		 * @brief 抛弃solid的大部分拓扑信息，转化为可视化网格
 		 */
-		std::shared_ptr<PPolygonMesh> solidToPolygonMesh(SolidHandle sld);
+		int solidToPolygonMesh(SolidHandle sld);
 
 		DEF_ELEMENT_OPERATION(Solid);
 		DEF_ELEMENT_OPERATION(Face);

@@ -23,73 +23,58 @@ namespace vrt {
 			return;
 		}
 
-		if((tessPolygon(lps_, &tessPts_, &drawTypes_))) return;
+		if((tessPolygon(lps_, &tessPts_, &drawInfo_))) return;
 		if (tessPts_.empty()) return;
+	
+		vao = std::make_shared<QOpenGLVertexArrayObject>();
+		vbo = std::make_shared<QOpenGLBuffer>();
 
-		for (int i = 0; i < tessPts_.size();) {
-			if (tessPts_[i].empty()) {
-				tessPts_.erase(tessPts_.begin() + i);
-				drawTypes_.erase(drawTypes_.begin() + i);
-			}
-			else i++;
-		}
+		vao->create();
+		vao->bind();
+		vbo->create();
+		vbo->bind();
+		vbo->allocate(&tessPts_[0], tessPts_.size() * sizeof(Float));
 
-		for (int i = 0; i < tessPts_.size(); i++) {
-			vaos.emplace_back(new QOpenGLVertexArrayObject);
-			auto& vao = vaos.back();
+		int attr = -1;
+		attr = CommonShader::ptr()->attributeLocation("aPos");
+		CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		CommonShader::ptr()->enableAttributeArray(attr);
 
-			vbos.emplace_back(new QOpenGLBuffer);
-			auto& vbo = vbos.back();
-
-			vao->create();
-			vao->bind();
-			vbo->create();
-			vbo->bind();
-			vbo->allocate(&tessPts_[i][0], tessPts_[i].size() * sizeof(Float));
-
-			int attr = -1;
-			attr = CommonShader::ptr()->attributeLocation("aPos");
-			CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-			CommonShader::ptr()->enableAttributeArray(attr);
-
-			attr = LineShader::ptr()->attributeLocation("aPos");
-			LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-			LineShader::ptr()->enableAttributeArray(attr);
-		}
+		attr = LineShader::ptr()->attributeLocation("aPos");
+		LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		LineShader::ptr()->enableAttributeArray(attr);
 
 
 		for (int i = 0; i < lps_.size(); i++) {
-			boundPts_.emplace_back();
+			boundDrawInfo_.push_back(DrawSingleObjInfo(GL_LINE_LOOP,boundPts_.size()/3,lps_[i].size()));
 			for (int j = 0; j < lps_[i].size(); j++) {
-				boundPts_.back().push_back(lps_[i][j].x());
-				boundPts_.back().push_back(lps_[i][j].y());
-				boundPts_.back().push_back(lps_[i][j].z());
+				boundPts_.push_back(lps_[i][j].x());
+				boundPts_.push_back(lps_[i][j].y());
+				boundPts_.push_back(lps_[i][j].z());
 			}
 		}
 
-		for (int i = 0; i < boundPts_.size(); i++) {
-			linevaos.emplace_back(new QOpenGLVertexArrayObject);
-			linevbos.emplace_back(new QOpenGLBuffer);
-			auto& vao = linevaos.back();
-			auto& vbo = linevbos.back();
+		linevao = std::make_shared<QOpenGLVertexArrayObject>();
+		linevbo = std::make_shared<QOpenGLBuffer>();
 
-			vao->create();
-			vao->bind();
-			vbo->create();
-			vbo->bind();
-			vbo->allocate(&boundPts_[i][0], boundPts_[i].size() * sizeof(Float));
+		linevao->create();
+		linevao->bind();
+		linevbo->create();
+		linevbo->bind();
+		linevbo->allocate(&boundPts_[0], boundPts_.size() * sizeof(Float));
 
-			int attr = -1;
-			attr = CommonShader::ptr()->attributeLocation("aPos");
-			CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-			CommonShader::ptr()->enableAttributeArray(attr);
-		}
+		attr = -1;
+		attr = CommonShader::ptr()->attributeLocation("aPos");
+		CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		CommonShader::ptr()->enableAttributeArray(attr);
+		
+		readyToDraw = true;
 	}
 
 	void PPolygon::paint(PaintInfomation* info)
 	{
 		doBeforePaint();
-		if (vaos.empty()) return;
+		if (!readyToDraw) return;
 		if (info->fillmode == FILL || info->fillmode == FILL_WIREFRAME) {
 			QOpenGLShaderProgram* shader;
 			auto viewNormal = QVector3D((info->viewMat).inverted().transposed()*QVector4D(QVector3D(normal_), 0));
@@ -126,14 +111,16 @@ namespace vrt {
 
 				shader->setUniformValue("ourColor", color().x(), color().y(), color().z(), 1.0f);
 			}
-			for (int i = 0; i < vaos.size();i++) {
-				vaos[i]->bind();
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				glDrawArrays(drawTypes_[i], 0, tessPts_[i].size() / 3);
+			vao->bind();
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-				glDisable(GL_POLYGON_OFFSET_FILL);
-				glPolygonOffset(0, 0);
+			for (int i = 0; i < drawInfo_.size(); i++) {
+				glDrawArrays(drawInfo_[i].type, drawInfo_[i].offset, drawInfo_[i].size);
 			}
+
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(0, 0);
+
 			shader->release();
 		}
 		if (info->fillmode == WIREFRAME || info->fillmode == FILL_WIREFRAME || !selected()) {  //选中时隐藏
@@ -146,10 +133,13 @@ namespace vrt {
 			LineShader::ptr()->setUniformValue("u_thickness", GLfloat(info->lineWidth));
 			glEnable(GL_POLYGON_OFFSET_FILL);
 			glPolygonOffset(-1, -1);
-			for (int i = 0; i < linevaos.size(); i++) {
-				linevaos[i]->bind();
-				glDrawArrays(GL_LINE_LOOP, 0, boundPts_[i].size()/3);
+
+			linevao->bind();
+
+			for (int i = 0; i < boundDrawInfo_.size(); i++) {
+				glDrawArrays(boundDrawInfo_[i].type, boundDrawInfo_[i].offset, boundDrawInfo_[i].size);
 			}
+
 			glDisable(GL_POLYGON_OFFSET_FILL);
 			glPolygonOffset(0, 0);
 			LineShader::ptr()->release();
@@ -225,22 +215,24 @@ namespace vrt {
 
 	std::mutex tessMtx;
 	//由于glu库原因，此处只能用全局变量，来给回调函数提供储存顶点坐标信息的位置
-	std::vector<std::vector<Float>>* glbTessPts;
-	std::vector<GLenum>* glbDrawTypes;
+	std::vector<Float>* glbTessPts;
+	std::vector<DrawSingleObjInfo>* glbDrawInfo;
 	bool glbError;
 
 	void CALLBACK vertexCallback(GLvoid* vertex)
 	{
 		double* cd = (double*)vertex;
-		glbTessPts->back().push_back(cd[0]);
-		glbTessPts->back().push_back(cd[1]);
-		glbTessPts->back().push_back(cd[2]);
+		glbTessPts->push_back(cd[0]);
+		glbTessPts->push_back(cd[1]);
+		glbTessPts->push_back(cd[2]);
 	}
 
 	void CALLBACK beginCallback(GLenum type)
 	{
-		glbDrawTypes->push_back(type);
-		glbTessPts->emplace_back();
+		if (!glbDrawInfo->empty()) glbDrawInfo->back().size = (glbTessPts->size() - glbDrawInfo->back().offset * 3)/3;
+		glbDrawInfo->emplace_back();
+		glbDrawInfo->back().type = type;
+		glbDrawInfo->back().offset = glbTessPts->size()/3;
 	}
 
 	void CALLBACK endCallback()
@@ -254,18 +246,18 @@ namespace vrt {
 		qDebug() << "error:" << errorCode;
 	}
 
-	int tessPolygon(const std::vector<std::vector<PType3f>>& lps, std::vector<std::vector<Float>>* tessPts, std::vector<GLenum>* drawTypes)
+	int tessPolygon(const std::vector<std::vector<PType3f>>& lps, std::vector<Float>* tessPts, std::vector<DrawSingleObjInfo>* drawInfo)
 	{
 		std::vector<std::vector<std::vector<PType3f>>> plgs{lps};
-		return tessPolygons(plgs, tessPts, drawTypes);
+		return tessPolygons(plgs, tessPts, drawInfo);
 	}
 
-	int tessPolygons(const std::vector<std::vector<std::vector<PType3f>>>& plgs, std::vector<std::vector<Float>>* tessPts, std::vector<GLenum>* drawTypes)
+	int tessPolygons(const std::vector<std::vector<std::vector<PType3f>>>& plgs, std::vector<Float>* tessPts, std::vector<DrawSingleObjInfo>* drawInfo)
 	{
 		GLUtesselator * tessobj;
 		tessobj = gluNewTess();
 		tessPts->clear();
-		drawTypes->clear();
+		drawInfo->clear();
 		//注册回调函数  
 		gluTessCallback(tessobj, GLU_TESS_VERTEX, (void (CALLBACK *)())vertexCallback);
 		gluTessCallback(tessobj, GLU_TESS_BEGIN, (void (CALLBACK *)())beginCallback);
@@ -277,7 +269,7 @@ namespace vrt {
 
 		tessMtx.lock();
 		glbTessPts = tessPts;
-		glbDrawTypes = drawTypes;
+		glbDrawInfo = drawInfo;
 		glbError = false;
 
 		int count = 0;
@@ -313,9 +305,11 @@ namespace vrt {
 			gluTessEndPolygon(tessobj);
 		}
 
+		gluDeleteTess(tessobj); 
+		glbDrawInfo->back().size = (glbTessPts->size() - glbDrawInfo->back().offset * 3)/3;
 		tessMtx.unlock();
-		gluDeleteTess(tessobj);
-		if (glbError) return -1;
+		if (glbError) 
+			return -1;
 		return 0;
 	}
 

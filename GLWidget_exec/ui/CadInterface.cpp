@@ -336,7 +336,7 @@ namespace vrt{
 
 		//每次更新，重置选择
 		MAIPTR->cadTreeUnselectedAll();
-		MAIPTR->getScene()->update();
+		//MAIPTR->getScene()->update();
 	}
 
 	vrt::CadInterface::SolidHandle CadInterface::getSolid(ELEMEMNT_TYPE type, ElemHandle elem)
@@ -396,11 +396,11 @@ namespace vrt{
 		cleanTreeItem(sldItem, 1);
 		MAIPTR->getCadTreeWidget()->takeTopLevelItem(MAIPTR->getCadTreeWidget()->indexOfTopLevelItem(sldItem));
 		delSolid(sld);
-		MAIPTR->getScene()->update();
+		//MAIPTR->getScene()->update();
 		//#TODO1 释放sld的所有内存空间
 	}
 
-	std::shared_ptr<vrt::PPolygonMesh> CadInterface::solidToPolygonMesh(SolidHandle sld)
+	int CadInterface::solidToPolygonMesh(SolidHandle sld)
 	{
 		std::vector<Point3f> pts;
 		std::vector<PPolygonMesh::Polygon> plgs;
@@ -434,8 +434,10 @@ namespace vrt{
 		}
 
 		std::shared_ptr<vrt::PPolygonMesh> plg(new PPolygonMesh(plgs, pts));
-		MAIPTR->ItemMng()->addItem(plg);
+		MAIPTR->itemMng()->addItems(plg);
 		removeSolid(sld);
+
+		return 0;
 	}
 
 	std::vector<vrt::CadInterface::HalfEdgeHandle> CadInterface::getHalfEdgesOfLoop(LoopHandle lp)

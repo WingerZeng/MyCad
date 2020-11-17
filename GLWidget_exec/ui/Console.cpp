@@ -2,7 +2,9 @@
 #include <sstream>
 #include "CadInterface.h"
 #include "MainWindow.h"
+#include "glrender/Scene.h"
 #include "utilities.h"
+#include "primitives/Subdivide.h"
 
 #define  BEGIN_FUNC_REGISTER\
 	std::function<int(std::iostream& sin)> lambda;
@@ -112,6 +114,8 @@ namespace vrt{
 			else
 				con->printCommandExecutionResults("Done.");
 		}
+		
+		MAIPTR->getScene()->update();
 	}
 
 	int Executor::getHelp()
@@ -173,6 +177,9 @@ namespace vrt{
 			REGISTER_CLASS_CMD_FUNC(sweep, MAIPTR->CadApi(), CadInterface, sweep)
 			REGISTER_CLASS_CMD_FUNC(createface, MAIPTR->CadApi(), CadInterface, createFaceFromLoop)
 			REGISTER_CLASS_CMD_FUNC(toPolygonMesh, MAIPTR->CadApi(), CadInterface, solidToPolygonMesh)
+			REGISTER_CMD_FUNC(DooSabinPolygon, dooSabinSubdivPolygonMesh)
+			REGISTER_CMD_FUNC(CatmullClarkPolygon, catmullClarkSubdivPolygonMesh);
+			REGISTER_CLASS_CMD_FUNC(wireframe, MAIPTR->getScene(), Scene, wireFrameMode)
 	}
 
 	QString Executor::modifyCmd(const QString& command)

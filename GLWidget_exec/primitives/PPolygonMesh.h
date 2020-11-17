@@ -4,7 +4,7 @@
 #include <QtGui/QOpenGLVertexArrayObject>
 #include <QtGui/QOpenGLBuffer>
 #include "Primitive.h"
-
+#include "PPolygon.h"
 namespace vrt {
 	class PPolygonMesh : public GeometryPrimitive
 	{
@@ -17,21 +17,30 @@ namespace vrt {
 			:plgs_(plgs),pts_(pts){
 			setColor({ 0.6,0.6,0.6 });
 		};
+		~PPolygonMesh();
 
 		virtual void initialize() override;
 		virtual void paint(PaintInfomation* info) override;
+
+		const std::vector<Polygon>& getPlgs() { return plgs_; }
+		const std::vector<Point3f>& getPts() { return pts_; }
+
 	private:
+		bool readyToDraw = false;
+
 		std::vector<Polygon> plgs_;
 		std::vector<Point3f> pts_;
-		std::vector<std::vector<Float>> boundPts_;//用于绘制边界
-		std::vector<std::vector<Float>> tessPts_;
-		std::vector<GLenum> drawTypes_;
 
-		std::vector<std::shared_ptr<QOpenGLBuffer>> vbos;
-		std::vector<std::shared_ptr<QOpenGLVertexArrayObject>> vaos;
+		std::vector<Float> boundPts_;
+		std::vector<DrawSingleObjInfo> boundDrawInfo_; //记录每条边线在boundPts中的offset
+		std::vector<Float> tessPts_;
+		std::vector<DrawSingleObjInfo> drawInfo_;
 
-		std::vector<std::shared_ptr<QOpenGLBuffer>> linevbos;
-		std::vector<std::shared_ptr<QOpenGLVertexArrayObject>> linevaos;
+		std::shared_ptr<QOpenGLBuffer> vbo;
+		std::shared_ptr<QOpenGLVertexArrayObject> vao;
+
+		std::shared_ptr<QOpenGLBuffer> linevbo;
+		std::shared_ptr<QOpenGLVertexArrayObject> linevao;
 	};
 }
 

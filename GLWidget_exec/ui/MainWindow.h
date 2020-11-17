@@ -31,7 +31,7 @@ namespace vrt {
 		void cadTreeUnselectedAll();
 
 		vrt::ScriptList* scplist() const { return ui_scplist; }
-		std::shared_ptr<vrt::ItemManager> ItemMng() const { return itemMng_; }
+		std::shared_ptr<vrt::ItemManager> itemMng() const { return itemMng_; }
 	private:
 		MainWindow(QWidget* parent = nullptr);
 		void setupScripts();
