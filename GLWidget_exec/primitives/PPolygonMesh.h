@@ -6,6 +6,8 @@
 #include "Primitive.h"
 #include "PPolygon.h"
 namespace vrt {
+	class PTriMesh;
+
 	class PPolygonMesh : public GeometryPrimitive
 	{
 	public:
@@ -16,8 +18,12 @@ namespace vrt {
 		PPolygonMesh(const std::vector<Polygon>& plgs,const std::vector<Point3f>& pts) //multi loop
 			:plgs_(plgs),pts_(pts){
 			setColor({ 0.6,0.6,0.6 });
+			buildTessPts();
 		};
+		PPolygonMesh(std::shared_ptr<PTriMesh> trimesh);
 		~PPolygonMesh();
+
+		int toTriangleMesh(std::vector<unsigned int>& tris, std::vector<Point3f>& pts);
 
 		virtual void initialize() override;
 		virtual void paint(PaintInfomation* info) override;
@@ -26,6 +32,8 @@ namespace vrt {
 		const std::vector<Point3f>& getPts() { return pts_; }
 
 	private:
+		int buildTessPts();
+
 		bool readyToDraw = false;
 
 		std::vector<Polygon> plgs_;
@@ -42,5 +50,8 @@ namespace vrt {
 		std::shared_ptr<QOpenGLBuffer> linevbo;
 		std::shared_ptr<QOpenGLVertexArrayObject> linevao;
 	};
+
+	//#PERF2 将命令接口整合到一个文件中，并清理文件中的包含Scene等头文件
+	int triangulatePolygonMesh(int id);
 }
 

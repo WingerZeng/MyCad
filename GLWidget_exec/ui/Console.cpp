@@ -5,6 +5,7 @@
 #include "glrender/Scene.h"
 #include "utilities.h"
 #include "primitives/Subdivide.h"
+#include "primitives/PPolygonMesh.h"
 
 #define  BEGIN_FUNC_REGISTER\
 	std::function<int(std::iostream& sin)> lambda;
@@ -89,8 +90,8 @@ namespace vrt{
 			std::stringstream sin(cmd);
 			std::string funcname;
 			sin >> funcname;
+			if (con) con->printCommandExecutionResults(QString::fromStdString(">Do " + funcname), QConsole::Partial);
 			if (triemap.find(funcname) != triemap.end()) {
-				if (con) con->printCommandExecutionResults(QString::fromStdString(">Do " + funcname), QConsole::Partial);
 				//通过函数名调用字典树中预先绑定的函数
 				ret = triemap[funcname](sin);
 				if (ret) {
@@ -177,8 +178,12 @@ namespace vrt{
 			REGISTER_CLASS_CMD_FUNC(sweep, MAIPTR->CadApi(), CadInterface, sweep)
 			REGISTER_CLASS_CMD_FUNC(createface, MAIPTR->CadApi(), CadInterface, createFaceFromLoop)
 			REGISTER_CLASS_CMD_FUNC(toPolygonMesh, MAIPTR->CadApi(), CadInterface, solidToPolygonMesh)
-			REGISTER_CMD_FUNC(DooSabinPolygon, dooSabinSubdivPolygonMesh)
-			REGISTER_CMD_FUNC(CatmullClarkPolygon, catmullClarkSubdivPolygonMesh);
+			REGISTER_CMD_FUNC(DooSabinPolygons, dooSabinSubdivPolygonMesh)
+			REGISTER_CMD_FUNC(CatmullClarkPolygons, catmullClarkSubdivPolygonMesh)
+			REGISTER_CMD_FUNC(DooSabinTriangles, dooSabinSubdivTriangles)
+			REGISTER_CMD_FUNC(CatmullClarkTriangles, catmullClarkSubdivTriangles)
+			REGISTER_CMD_FUNC(LoopTriangles, loopSubdivideTriangles)
+			REGISTER_CMD_FUNC(triangulatePolygonMesh, triangulatePolygonMesh)
 			REGISTER_CLASS_CMD_FUNC(wireframe, MAIPTR->getScene(), Scene, wireFrameMode)
 	}
 

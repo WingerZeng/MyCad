@@ -24,7 +24,7 @@ namespace vrt{
 			});
 	}
 
-	void ItemManager::addItems(std::shared_ptr<Primitive> prim)
+	void ItemManager::addItem(std::shared_ptr<Primitive> prim)
 	{
 		if (isExist(prim))
 			return;
@@ -36,10 +36,10 @@ namespace vrt{
 		MAIPTR->getScene()->addPrimitive(prim);
 	}
 
-	void ItemManager::addItems(std::vector<std::shared_ptr<Primitive>> prims)
+	void ItemManager::addItem(std::vector<std::shared_ptr<Primitive>> prims)
 	{
 		for (const auto& prim : prims) {
-			addItems(prim);
+			addItem(prim);
 		}
 	}
 

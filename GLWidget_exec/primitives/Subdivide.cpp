@@ -6,6 +6,7 @@
 #include "ui/ItemManager.h"
 #include "glrender/Scene.h"
 #include "PPolygonMesh.h"
+#include "PTriMesh.h"
 namespace vrt{
 	class SubdivPoint;
 	class SubdivHalfEdge;
@@ -58,6 +59,7 @@ namespace vrt{
 
 		SubdivPolygonMesh(int nPlgs, const int* plgLoopNums, const int *loopIndicesNums, const int *indices, int nPts, const Point3f* pts);
 		SubdivPolygonMesh(std::shared_ptr<PPolygonMesh> plgmesh);
+		SubdivPolygonMesh(std::shared_ptr<PTriMesh> trimesh);
 		std::vector<std::shared_ptr<vrt::Primitive>> createPrimitives();
 		SubdivPolygonMesh() = default;
 		std::set<SubdivHalfEdge> edges;
@@ -211,6 +213,11 @@ namespace vrt{
 		}
 	}
 
+	SubdivPolygonMesh::SubdivPolygonMesh(std::shared_ptr<PTriMesh> trimesh)
+	{
+
+	}
+
 	std::vector<std::shared_ptr<vrt::Primitive>> SubdivPolygonMesh::createPrimitives()
 	{
 		std::vector<Point3f>  pts;
@@ -240,7 +247,7 @@ namespace vrt{
 		if (!plgs) return -1;
 		auto output = dooSabinSubdivide(nlevels,plgs);
 		MAIPTR->itemMng()->delItem(plgs);
-		MAIPTR->itemMng()->addItems(output); 
+		MAIPTR->itemMng()->addItem(output); 
 		//MAIPTR->getScene()->update();
 		return 0;
 	}
@@ -252,7 +259,43 @@ namespace vrt{
 		if (!plgs) return -1;
 		auto output = catmullClarkSubdivide(nlevels, plgs);
 		MAIPTR->itemMng()->delItem(plgs);
-		MAIPTR->itemMng()->addItems(output);
+		MAIPTR->itemMng()->addItem(output);
+		//MAIPTR->getScene()->update();
+		return 0;
+	}
+
+	int dooSabinSubdivTriangles(int id, int nlevels)
+	{
+		std::shared_ptr<PTriMesh> tris;
+		MAIPTR->itemMng()->getItem(id, tris);
+		if (!tris) return -1;
+		auto output = dooSabinSubdivideTri(nlevels, tris);
+		MAIPTR->itemMng()->delItem(tris);
+		MAIPTR->itemMng()->addItem(output);
+		//MAIPTR->getScene()->update();
+		return 0;
+	}
+
+	int catmullClarkSubdivTriangles(int id, int nlevels)
+	{
+		std::shared_ptr<PTriMesh> tris;
+		MAIPTR->itemMng()->getItem(id, tris);
+		if (!tris) return -1;
+		auto output = catmullClarkSubdivideTri(nlevels, tris);
+		MAIPTR->itemMng()->delItem(tris);
+		MAIPTR->itemMng()->addItem(output);
+		//MAIPTR->getScene()->update();
+		return 0;
+	}
+
+	int loopSubdivideTriangles(int id, int nlevels)
+	{
+		std::shared_ptr<PTriMesh> tris;
+		MAIPTR->itemMng()->getItem(id, tris);
+		if (!tris) return -1;
+		auto output = loopSubdivideTri(nlevels, tris);
+		MAIPTR->itemMng()->delItem(tris);
+		MAIPTR->itemMng()->addItem(output);
 		//MAIPTR->getScene()->update();
 		return 0;
 	}
@@ -564,21 +607,445 @@ namespace vrt{
 		return mesh->createPrimitives();
 	}
 
-	std::vector<std::shared_ptr<vrt::Primitive>> dooSabinSubdivideTri(int nLevels, int nIndices, const int *indices, int nPts, const Point3f* pts)
+	std::vector<std::shared_ptr<vrt::Primitive>> dooSabinSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh)
 	{
-		//TODO
-		return std::vector<std::shared_ptr<vrt::Primitive>>();
+		std::shared_ptr<PPolygonMesh> plgmesh = std::make_shared<PPolygonMesh>(triMesh);
+		if (!plgmesh) return std::vector<std::shared_ptr<vrt::Primitive>>();
+		return dooSabinSubdivide(nLevels, plgmesh);
 	}
 
-	std::vector<std::shared_ptr<vrt::Primitive>> catmullClarkSubdivideTri(int nLevels, int nIndices, const int *indices, int nPts, const Point3f* pts)
+	std::vector<std::shared_ptr<vrt::Primitive>> catmullClarkSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh)
 	{
-		//TODO
-		return std::vector<std::shared_ptr<vrt::Primitive>>();
+		std::shared_ptr<PPolygonMesh> plgmesh = std::make_shared<PPolygonMesh>(triMesh);
+		if (!plgmesh) return std::vector<std::shared_ptr<vrt::Primitive>>();
+		return catmullClarkSubdivide(nLevels, plgmesh);
 	}
 
-	std::vector<std::shared_ptr<vrt::Primitive>> loopSubdivideTri(int nLevels, int nIndices, const int *indices, int nPts, const Point3f* pts)
+	//--------------------------------------------------
+	//
+	// Loop subdivide method definition
+	//
+	//--------------------------------------------------
+
+	inline int pevIdx(int idx) { return (idx + 2) % 3; }
+	inline int nxtIdx(int idx) { return (idx + 1) % 3; }
+
+	/*Structures for loop subdivide*/
+	struct LPVertex;
+	struct LPFace; 
+	struct LPEdge;
+	struct LPTopology;
+
+	typedef unsigned int handle_lpface;
+	typedef unsigned int handle_lpvertex;
+#define handle_null (unsigned int(-1))
+	
+	struct LPVertex
 	{
-		//TODO
-		return std::vector<std::shared_ptr<vrt::Primitive>>();
+		LPVertex(Point3f coord = Point3f(0, 0, 0))
+			:pt(coord) {}
+		bool isBoundary(const LPTopology& tp) const;
+		int valence(const LPTopology& tp) const; //获取点的度
+		bool isRegular(const LPTopology& tp) const;
+		handle_lpvertex child(LPTopology& tp) const;
+		int boundAdjVertices(LPTopology& tp , handle_lpvertex& nxtv, handle_lpvertex& pevv) const; //获取边界点的相邻边界点
+
+		Point3f pt;
+		handle_lpface firstFc;
+		handle_lpvertex index = -1;
+	};
+
+	//边作为中介来建立面之间的相邻关系
+	struct LPEdge {
+		LPEdge(handle_lpvertex v1 = handle_null, handle_lpvertex v2 = handle_null) :v{ std::min(v1,v2),std::max(v2,v1) } {}; //将顶点指针升序排列，保证构造时参数顺序无关性
+		int indexInFace(LPFace* face) const;
+		bool operator<(const LPEdge& rhs) const {
+			if (v[0] != rhs.v[0]) return v[0] < rhs.v[0];
+			return v[1] < rhs.v[1];
+		}
+		void connectFaces(LPTopology& tp) const; //在fc成员两个元素都被赋值的情况下，连接fc中两个面
+		handle_lpvertex child(LPTopology& tp) const;
+		mutable int index;
+		handle_lpvertex v[2];
+		mutable handle_lpface fc[2];
+	};
+
+	struct LPFace
+	{
+		LPFace(handle_lpvertex v0 = handle_null, handle_lpvertex v1 = handle_null, handle_lpvertex v2 = handle_null)
+			:v{ v0,v1,v2 }, adj{ handle_null,handle_null,handle_null }{}
+		int vidx(handle_lpvertex vtx) const;
+		handle_lpface nxtFace(handle_lpvertex vtx) const; //返回某个顶点对应的相邻面
+		handle_lpface pevFace(handle_lpvertex vtx) const; //返回某个顶点对应的前一个面
+		handle_lpvertex nxtVtx(handle_lpvertex vtx) const; //返回某个顶点上一个顶点
+		handle_lpvertex pevVtx(handle_lpvertex vtx) const; //返回某个顶点下一个顶点
+
+		handle_lpface adj[3]; //face adj[i] shares vertex v[i] v[(i+1)%3] with this face
+		handle_lpvertex v[3];
+	};
+
+	struct LPTopology
+	{
+		LPTopology(const std::vector<Point3f>& pts, const std::vector<unsigned int>& indices);
+		LPTopology() = default;
+		void setupVtxIndex();
+		void setupEdgeIndex();
+		const LPEdge* getEdge(handle_lpvertex v0, handle_lpvertex v1); //寻找边，若不存在该边，则创建并返回
+		void addEdgeForFace(handle_lpface face, const LPEdge& edge); //为面face添加新边edge，并分配edge的fc属性，如果edge已经存在，则连接face与edge的另外一个面
+		std::shared_ptr<PTriMesh> toTriMesh();
+		int nfc, npt;
+		std::unique_ptr<LPFace[]> fcs;
+		std::unique_ptr<LPVertex[]> vtxs;
+		std::set<LPEdge> edges;
+	};
+
+	LPTopology::LPTopology(const std::vector<Point3f>& pts, const std::vector<unsigned int>& indices)
+	{
+		nfc = indices.size() / 3;
+		npt = pts.size();
+		fcs.reset(new LPFace[nfc]);
+		vtxs.reset(new LPVertex[pts.size()]);
+		for (int i = 0; i < npt;i++) {
+			vtxs[i].pt = pts[i];
+		}
+
+		setupVtxIndex();
+
+		for (int i = 0; i < nfc; i++) {
+			fcs[i].v[0] = indices[3 * i];
+			fcs[i].v[1] = indices[3 * i + 1];
+			fcs[i].v[2] = indices[3 * i + 2];
+			vtxs[3 * i].firstFc = i;
+			vtxs[3 * i + 1].firstFc = i;
+			vtxs[3 * i + 2].firstFc = i;
+		}
+
+		for (handle_lpface fc = 0; fc < nfc; fc++) {
+			for (int i = 0; i < 3; i++) {
+				handle_lpvertex v0 = fcs[fc].v[i];
+				handle_lpvertex v1 = fcs[fc].v[nxtIdx(i)];
+				LPEdge edge(v0, v1);
+				auto it = edges.find(edge);
+				if (it == edges.end()) {
+					//没有找到相邻面，新建边
+					edge.fc[0] = fc;
+					edges.insert(edge);
+				}
+				else {
+					//找到相邻面，维护相邻面信息
+					LPFace* adjface = &fcs[it->fc[0]];
+					adjface->adj[it->indexInFace(adjface)] = fc;
+					fcs[fc].adj[i] = it->fc[0];
+					it->fc[1] = fc;
+				}
+			}
+		}
+		setupEdgeIndex();
 	}
+
+	inline bool LPVertex::isBoundary(const LPTopology& tp) const
+	{
+		handle_lpface fc = firstFc;
+		bool isbd = false;
+		do
+		{
+			fc = tp.fcs[fc].nxtFace(index);
+			if (fc == handle_null) {  //如果遍历到null的三角相邻面，说明遇到边界
+				isbd = true;
+				break;
+			}
+		} while (fc != firstFc);
+		return isbd;
+	}
+
+	inline int LPVertex::valence(const LPTopology& tp) const
+	{
+		handle_lpface fc = firstFc;
+		bool isbd = false;
+		int count = 0;
+		do
+		{
+			++count;
+			fc = tp.fcs[fc].nxtFace(index);
+			if (fc == handle_null) {  //如果遍历到null的三角相邻面，说明遇到边界
+				isbd = true;
+				break;
+			}
+		} while (fc != firstFc);
+		if (!isbd) return count;
+		//碰到边界后，向另外一个方向进行计数
+		fc = tp.fcs[firstFc].pevFace(index);
+		while (fc != handle_null) {
+			count++;
+			fc = tp.fcs[fc].pevFace(index);
+		}
+		return count + 1;  //边界点的度数为相邻面数+1
+	}
+
+	vrt::handle_lpvertex LPVertex::child(LPTopology& tp) const
+	{
+		return index;
+	}
+
+	inline int LPVertex::boundAdjVertices(LPTopology& tp, handle_lpvertex& nxtv, handle_lpvertex& pevv) const
+	{
+		handle_lpface fc = firstFc;
+		bool isbd = false;
+		do {
+			handle_lpface nxtfc = tp.fcs[fc].nxtFace(index);
+			if (nxtfc == handle_null) {  //如果遍历到null的三角相邻面，说明遇到边界
+				isbd = true;
+				break;
+			}
+			fc = nxtfc;
+		} while (fc != firstFc);
+		DCHECK(isbd);
+		nxtv = tp.fcs[fc].nxtVtx(index);
+
+		fc = firstFc;
+		isbd = false;
+		do {
+			handle_lpface nxtfc = tp.fcs[fc].pevFace(index);
+			if (nxtfc == handle_null) {  //如果遍历到null的三角相邻面，说明遇到边界
+				isbd = true;
+				break;
+			}
+			fc = nxtfc;
+		} while (fc != firstFc);
+		DCHECK(isbd);
+		pevv = tp.fcs[fc].pevVtx(index);
+	}
+
+	void LPTopology::setupVtxIndex()
+	{
+		for (int i = 0; i < npt; i++) {
+			vtxs[i].index = i;
+		}
+	}
+
+	void LPTopology::setupEdgeIndex()
+	{
+		//设置LPEdge的index成员
+		int count = 0;
+		for (auto& edge : edges)
+		{
+			edge.index = count;
+			++count;
+		}
+	}
+
+	const vrt::LPEdge* LPTopology::getEdge(handle_lpvertex v0, handle_lpvertex v1)
+	{
+		auto it = edges.find(LPEdge(v0, v1));
+		if (it == edges.end()) {
+			edges.insert(LPEdge(v0, v1));
+			return &*edges.find(LPEdge(v0, v1));
+		}
+		return &*it;
+	}
+
+	void LPTopology::addEdgeForFace(handle_lpface face, const LPEdge& edge)
+	{
+		auto it = edges.find(edge);
+		if (it == edges.end()) {
+			edges.insert(edge);
+			edges.find(edge)->fc[0] = face;
+		}
+		else {
+			it->fc[1] = face;
+			it->connectFaces(*this);
+		}
+	}
+
+	std::shared_ptr<vrt::PTriMesh> LPTopology::toTriMesh()
+	{
+		std::vector<Point3f> ptvec;
+		std::vector<unsigned int> trivec;
+		for (int i = 0; i < npt;i++) {
+			ptvec.push_back(vtxs[i].pt);
+		}
+		for (int i = 0; i < nfc; i++) {
+			trivec.push_back(fcs[i].v[0]);
+			trivec.push_back(fcs[i].v[1]);
+			trivec.push_back(fcs[i].v[2]);
+		}
+		return std::make_shared<PTriMesh>(trivec, ptvec);
+	}
+
+	inline int LPEdge::indexInFace(LPFace* face) const {
+		int v1 = face->vidx(v[0]);
+		int v2 = face->vidx(v[1]);
+		if (v1 == pevIdx(v2)) return v1;
+		DCHECK(v1 == nxtIdx(v2));
+		return v2;
+	}
+
+	inline void LPEdge::connectFaces(LPTopology& tp) const
+	{
+		DCHECK(fc[0] != handle_null && fc[1] != handle_null);
+		LPFace* fc0 = &tp.fcs[fc[0]];
+		LPFace* fc1 = &tp.fcs[fc[1]];
+		fc0->adj[indexInFace(fc0)] = fc[1];
+		fc1->adj[indexInFace(fc0)] = fc[0];
+		return;
+	}
+
+	vrt::handle_lpvertex LPEdge::child(LPTopology& tp) const
+	{
+		//子边点在子顶点之后，按父边顺序排列
+		return tp.npt + index;
+	}
+
+	inline int LPFace::vidx(handle_lpvertex vtx) const {
+		if (v[0] == vtx) return 0;
+		if (v[1] == vtx) return 1;
+		DCHECK(v[2] == vtx);
+		return 2;
+	}
+
+	inline vrt::handle_lpface LPFace::nxtFace(handle_lpvertex vtx) const
+	{
+		return adj[vidx(vtx)];
+	}
+
+	inline vrt::handle_lpface LPFace::pevFace(handle_lpvertex vtx) const
+	{
+		return adj[pevIdx(vidx(vtx))];
+	}
+
+	inline vrt::handle_lpvertex LPFace::nxtVtx(handle_lpvertex vtx) const
+	{
+		return v[nxtIdx(vidx(vtx))];
+	}
+
+	inline vrt::handle_lpvertex LPFace::pevVtx(handle_lpvertex vtx) const
+	{
+		return v[pevIdx(vidx(vtx))];
+	}
+
+	inline constexpr Float boundVtxBeta() {
+		return 0.125;
+	}
+
+	inline Float innerVtxBeta(int valence) {
+		if (valence == 3) return (3. / 16.);
+		else return (3. / 8. / valence);
+	}
+
+	std::vector<std::shared_ptr<vrt::Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh)
+	{
+		std::unique_ptr<LPTopology> msh(new LPTopology(Point3f::fromFloatVec(triMesh->getPts()), triMesh->getIndices()));
+
+		for (int ilevel = 0; ilevel < nLevels; ilevel++) {
+			std::unique_ptr<LPTopology> newmsh(new LPTopology);
+			newmsh->npt = msh->npt + msh->edges.size();
+			newmsh->npt = msh->npt * 4;
+			newmsh->fcs.reset(new LPFace[newmsh->npt]);
+			newmsh->vtxs.reset(new LPVertex[newmsh->npt]);
+
+			newmsh->setupVtxIndex();
+
+			/*生成所有顶点*/
+			//处理子顶点
+			for (handle_lpvertex ipt = 0; ipt < newmsh->npt; ipt++) {
+				LPVertex* pt = &msh->vtxs[ipt];
+				//处理边界点
+				if (pt->isBoundary(*msh)) {
+					handle_lpvertex v0;
+					handle_lpvertex v1;
+					pt->boundAdjVertices(*msh, v0, v1);
+					newmsh->vtxs[pt->child(*msh)].pt = (1 - 2 * boundVtxBeta())*pt->pt + boundVtxBeta()*(msh->vtxs[v0].pt + msh->vtxs[v1].pt);
+				}
+				//处理内部点
+				else {
+					double beta = innerVtxBeta(pt->valence(*msh));
+					handle_lpface fc = pt->firstFc;
+					Point3f ptsum(0,0,0);
+					int count = 0;
+					do
+					{
+						ptsum += msh->vtxs[msh->fcs[fc].nxtVtx(pt->index)].pt;
+						++count;
+						fc = msh->fcs[fc].nxtFace(pt->index);
+					} while (fc != pt->firstFc);
+					newmsh->vtxs[pt->child(*msh)].pt = (1 - count * beta) * pt->pt + beta * ptsum;
+				}
+			}
+			//处理子边点
+			for (const auto& edge : msh->edges) {
+				//边界边
+				if (msh->vtxs[edge.v[0]].isBoundary(*msh)) {
+					DCHECK(msh->vtxs[edge.v[1]].isBoundary(*msh));
+					Point3f subPt = (msh->vtxs[edge.v[0]].pt + msh->vtxs[edge.v[1]].pt) / 2;
+					newmsh->vtxs[edge.child(*msh)].pt = subPt;
+				}
+				//内部边
+				else
+				{
+					LPFace* face1 = &msh->fcs[edge.fc[0]];
+					LPFace* face2 = &msh->fcs[edge.fc[1]];
+					handle_lpvertex v[4];
+					v[0] = edge.v[0];
+					v[1] = edge.v[1];
+					v[2] = face1->v[pevIdx(edge.indexInFace(face1))];
+					v[3] = face2->v[pevIdx(edge.indexInFace(face2))];
+					Point3f subPt = (msh->vtxs[v[2]].pt + msh->vtxs[v[3]].pt) / 8;
+					subPt += (msh->vtxs[v[0]].pt + msh->vtxs[v[1]].pt) * 3 / 8;
+					newmsh->vtxs[edge.child(*msh)].pt = subPt;
+				}
+			}
+			/*生成顶点结束*/
+
+			for (int ifc = 0; ifc < msh->nfc; ifc++) {
+				LPFace* pfc = &msh->fcs[ifc];
+				handle_lpface subf[4];
+				//确定子面的索引, subf[3]是中心子面
+				for (int i = 0; i < 4; i++) {
+					subf[i] = ifc * 4 + i;
+				}
+				//设置子顶点的face属性
+				for (int i = 0; i < 3; i++) {
+					msh->vtxs[pfc->v[i]].firstFc = subf[i];
+				}
+				//获取父面的三条边
+				const LPEdge* eg[3];
+				for (int i = 0; i < 3; i++) {
+					eg[i] = &*msh->edges.find(LPEdge(pfc->v[i], pfc->v[nxtIdx(i)]));
+				}
+				//创建中央边
+				const LPEdge* subeg[3];
+				for (int i = 0; i < 3; i++) {
+					subeg[i] = newmsh->getEdge(eg[i]->child(*newmsh), eg[pevIdx(i)]->child(*newmsh));
+					subeg[i]->fc[0] = subf[i];
+					subeg[i]->fc[1] = subf[3];
+				}
+				//设置中央面
+				for (int i = 0; i < 3; i++) {
+					handle_lpvertex ep = eg[i]->child(*msh); //第i个边点
+					newmsh->fcs[subf[3]].v[i] = ep;
+					newmsh->vtxs[ep].firstFc = subf[3];
+					//子面的相邻关系
+					newmsh->fcs[subf[3]].adj[i] = subf[i];
+					newmsh->fcs[subf[i]].adj[1] = subf[3];
+				}
+				//设置角上3个面
+				for (int i = 0; i < 3; i++) {
+					LPFace* fc = &newmsh->fcs[subf[i]];
+					fc->v[0] = msh->vtxs[pfc->v[i]].child(*msh);
+					fc->v[1] = eg[i]->child(*msh);
+					fc->v[2] = eg[pevIdx(i)]->child(*msh);
+
+					newmsh->addEdgeForFace(subf[i], LPEdge(fc->v[0], fc->v[1]));
+					newmsh->addEdgeForFace(subf[i], LPEdge(fc->v[0], fc->v[2]));
+				}
+			}
+
+			newmsh->setupEdgeIndex();
+			msh = std::move(newmsh);
+		}
+
+		//TODO 移到极限点
+		return std::vector<std::shared_ptr<vrt::Primitive>>{msh->toTriMesh()};
+	}
+#undef  handle_error
 }

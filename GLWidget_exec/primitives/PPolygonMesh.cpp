@@ -3,8 +3,26 @@
 #include "shaders.h"
 #include "PaintInformation.h"
 #include "lights/Light.h"
+
+#include "PTriMesh.h"
+#include "glrender/Scene.h"
+#include "ui/MainWindow.h"
+#include "ui/ItemManager.h"
 namespace vrt{
 	
+	PPolygonMesh::PPolygonMesh(std::shared_ptr<PTriMesh> trimesh)
+	{
+		pts_ = Point3f::fromFloatVec(trimesh->getPts());
+		for (int i = 0; i < trimesh->getIndices().size()/3; i++) {
+			const auto& indices = trimesh->getIndices();
+			plgs_.emplace_back();
+			plgs_.back().lps_.push_back(std::vector<int>{ static_cast<int>(indices[3 * i]), static_cast<int>(indices[3 * i + 1]), static_cast<int>(indices[3 * i + 2])});
+		}
+
+		setColor({ 0.6,0.6,0.6 });
+		buildTessPts();
+	}
+
 	PPolygonMesh::~PPolygonMesh()
 	{
 		if(vbo)vbo->destroy();
@@ -13,23 +31,93 @@ namespace vrt{
 		if(linevao)linevao->destroy();
 	}
 
+	int PPolygonMesh::toTriangleMesh(std::vector<unsigned int>& tris, std::vector<Point3f>& pts)
+	{
+		std::map<Point3f, int> ptoi;
+		pts.clear();
+		tris.clear();
+
+		//通过容差判断点是否在点集中，不是则新建点，返回索引
+		auto getPtIdx = [&ptoi, &pts](const Point3f& pt) {
+			int idx;
+			auto it = ptoi.find(pt);
+			if (it == ptoi.end()) {
+				pts.push_back(pt);
+				idx = ptoi[pt] = pts.size() - 1;
+			}
+			else
+			{
+				DCHECK((pt - it->first).length() < MachineEpsilon*1e2);
+				idx = it->second;
+			}
+			return idx;
+		};
+
+		auto getTessPt = [this](int idx) {
+			return Point3f(this->tessPts_[idx * 3], tessPts_[idx * 3 + 1], tessPts_[idx * 3 + 2]);
+		};
+
+		for (const auto& info : drawInfo_) {
+			switch (info.type)
+			{
+			case GL_TRIANGLES:
+			{
+				for (int i = 0; i < info.size; i++) {
+					tris.push_back(getPtIdx(getTessPt(info.offset + i)));
+				}
+				break;
+			}
+
+			case GL_TRIANGLE_FAN:
+			{
+				int firstPt = getPtIdx(getTessPt(info.offset));
+				int secondPt = getPtIdx(getTessPt(info.offset + 1));
+				for (int i = 2; i < info.size; i++) {
+					int thirdPt = getPtIdx(getTessPt(info.offset + i));
+					tris.push_back(firstPt);
+					tris.push_back(secondPt);
+					tris.push_back(thirdPt);
+					secondPt = thirdPt;
+				}
+				break;
+			}
+
+			case GL_TRIANGLE_STRIP:
+			{
+				bool odd = true;
+				int firstPt = getPtIdx(getTessPt(info.offset));
+				int secondPt = getPtIdx(getTessPt(info.offset + 1));
+				for (int i = 2; i < info.size; i++) {
+					int thirdPt = getPtIdx(getTessPt(info.offset + i));
+					if (odd) {
+						tris.push_back(firstPt);
+						tris.push_back(secondPt);
+						tris.push_back(thirdPt);
+					}
+					else {
+						tris.push_back(firstPt);
+						tris.push_back(thirdPt);
+						tris.push_back(secondPt);
+					}
+					firstPt = secondPt;
+					secondPt = thirdPt;
+					odd = !odd;
+					secondPt = thirdPt;
+				}
+				break;
+			}
+
+			default:
+				CHECK(0);
+				break;
+			}
+		}
+	}
+
 	void PPolygonMesh::initialize()
 	{
 		this->initializeOpenGLFunctions();
 
-		std::vector<std::vector<std::vector<Point3f>>> plgPts;
-		for (const auto& plg : plgs_) {
-			plgPts.emplace_back();
-			for (const auto& lp : plg.lps_) {
-				plgPts.back().emplace_back();
-				for (const auto& ptIdx : lp) {
-					plgPts.back().back().push_back(pts_[ptIdx]);
-				}
-			}
-		}
-
-		//将多边形离散为面片
-		if ((tessPolygons(plgPts, &tessPts_, &drawInfo_))) return;
 		if (tessPts_.empty()) 
 			return;
 
@@ -73,9 +161,9 @@ namespace vrt{
 		linevbo->allocate(&boundPts_[0], boundPts_.size() * sizeof(Float));
 
 		attr = -1;
-		attr = CommonShader::ptr()->attributeLocation("aPos");
-		CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-		CommonShader::ptr()->enableAttributeArray(attr);
+		attr = LineShader::ptr()->attributeLocation("aPos");
+		LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		LineShader::ptr()->enableAttributeArray(attr);
 
 		readyToDraw = true;
 	}
@@ -146,6 +234,36 @@ namespace vrt{
 			LineShader::ptr()->release();
 		}
 		doAfterPaint();
+	}
+
+	int PPolygonMesh::buildTessPts()
+	{
+		std::vector<std::vector<std::vector<Point3f>>> plgPts;
+		for (const auto& plg : plgs_) {
+			plgPts.emplace_back();
+			for (const auto& lp : plg.lps_) {
+				plgPts.back().emplace_back();
+				for (const auto& ptIdx : lp) {
+					plgPts.back().back().push_back(pts_[ptIdx]);
+				}
+			}
+		}
+
+		//将多边形离散为面片
+		return tessPolygons(plgPts, &tessPts_, &drawInfo_);
+	}
+
+	int triangulatePolygonMesh(int id)
+	{
+		std::shared_ptr<PPolygonMesh> plg;
+		MAIPTR->itemMng()->getItem(id,plg);
+		if (!plg) return -1;
+		std::vector<unsigned int> tris;
+		std::vector<Point3f> pts;
+		plg->toTriangleMesh(tris, pts);
+		MAIPTR->itemMng()->addItem(std::make_shared<PTriMesh>(tris, pts));
+		MAIPTR->itemMng()->delItem(plg);
+		return 0;
 	}
 
 }

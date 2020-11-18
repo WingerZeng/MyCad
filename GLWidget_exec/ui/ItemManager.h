@@ -11,8 +11,8 @@ namespace vrt {
 	public:
 		ItemManager(QTreeWidget* treeWgt);
 
-		void addItems(std::shared_ptr<Primitive> prim);
-		void addItems(std::vector<std::shared_ptr<Primitive>> prims);
+		void addItem(std::shared_ptr<Primitive> prim);
+		void addItem(std::vector<std::shared_ptr<Primitive>> prims);
 		std::shared_ptr<Primitive> getItem(int id);
 
 		template<class T>

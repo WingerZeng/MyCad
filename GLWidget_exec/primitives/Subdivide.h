@@ -3,22 +3,38 @@
 #include "types.h"
 #include "Primitive.h"
 namespace vrt {
-	/*Subdivide schemes for general topology*/
+	/* 命令行接口，将细分函数映射到命令行 */
 	int dooSabinSubdivPolygonMesh(int id, int nlevels);
 
 	int catmullClarkSubdivPolygonMesh(int id, int nlevels);
 
+	int dooSabinSubdivTriangles(int id, int nlevels);
+
+	int catmullClarkSubdivTriangles(int id, int nlevels);
+
+	int loopSubdivideTriangles(int id, int nlevels);
+	/**
+	 * @brief 将多边形网格进行DooSabin细分
+	 */
 	std::vector<std::shared_ptr<Primitive>> dooSabinSubdivide(int nLevels, std::shared_ptr<PPolygonMesh> plgMesh);
 
+	/**
+	 * @brief 将多边形网格进行CatmullClarl细分
+	 */
 	std::vector<std::shared_ptr<Primitive>> catmullClarkSubdivide(int nLevels, std::shared_ptr<PPolygonMesh> plgMesh);
 
-	/*Subdivide schemes for triangular mesh*/
-	std::vector<std::shared_ptr<Primitive>> dooSabinSubdivideTri(int nLevels, int nIndices,
-		const int *indices, int nPts, const Point3f* pts);
+	/**
+	 * @brief 将三角网格进行DooSabin细分
+	 */
+	std::vector<std::shared_ptr<Primitive>> dooSabinSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh);
 
-	std::vector<std::shared_ptr<Primitive>> catmullClarkSubdivideTri(int nLevels, int nIndices,
-		const int *indices, int nPts, const Point3f* pts);
+	/**
+	 * @brief 将三角网格进行CatmullClark细分
+	 */
+	std::vector<std::shared_ptr<Primitive>> catmullClarkSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh);
 
-	std::vector<std::shared_ptr<Primitive>> loopSubdivideTri(int nLevels, int nIndices,
-		const int *indices, int nPts, const Point3f* pts);
+	/**
+	 * @brief 将三角网格进行Loop细分
+	 */
+	std::vector<std::shared_ptr<Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh);
 }

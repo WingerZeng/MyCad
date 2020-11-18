@@ -434,7 +434,7 @@ namespace vrt{
 		}
 
 		std::shared_ptr<vrt::PPolygonMesh> plg(new PPolygonMesh(plgs, pts));
-		MAIPTR->itemMng()->addItems(plg);
+		MAIPTR->itemMng()->addItem(plg);
 		removeSolid(sld);
 
 		return 0;

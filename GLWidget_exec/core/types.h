@@ -81,6 +81,7 @@ namespace vrt {
 			return *(typeT*)(this);
 		}
 	protected:
+		static const int tolerance = MachineEpsilon*1e2;
 		dataT dat;
 	};
 
@@ -98,6 +99,12 @@ namespace vrt {
 		using TypeWithData<dataT, typeT>::TypeWithData;
 		TypeWithSizedRawData() 
 			: TypeWithData<dataT, typeT>() { dat << 0, 0; }
+		bool operator<(const TypeWithSizedRawData& rhs) const {
+			if (rhs.x() - x() > tolerance) return true;
+			if (x() - rhs.x() > tolerance) return false;
+			if (rhs.y() - y() > tolerance) return true;
+			return false;
+		}
 		explicit TypeWithSizedRawData(elemT xx, elemT yy)
 			: TypeWithData<dataT, typeT>()
 		{
@@ -142,7 +149,19 @@ namespace vrt {
 		}
 		elemT lengthSquared() const { return x() * x() + y() * y(); }
 		elemT length() const { return std::sqrt(LengthSquared()); }
+
+		inline static std::vector<typeT> fromFloatVec(std::vector<Float> vec);
 	};
+
+	template <typename elemT, typename dataT, typename typeT>
+	std::vector<typeT> vrt::TypeWithSizedRawData<elemT, dataT, typeT, 2>::fromFloatVec(std::vector<Float> vec)
+	{
+		std::vector<typeT> retvec;
+		for (int i = 0; i < vec.size()/2; i++) {
+			retvec.push_back(typeT(vec[2 * i], vec[2 * i + 2]));
+		}
+		return retvec;
+	}
 
 	template <typename elemT, typename dataT, typename typeT>
 	class TypeWithSizedRawData <typename elemT, typename dataT, typename typeT, 3>: public TypeWithData<dataT, typeT>
@@ -151,7 +170,17 @@ namespace vrt {
 		using TypeWithData<dataT, typeT>::TypeWithData;
 		TypeWithSizedRawData() 
 			: TypeWithData<dataT, typeT>() { dat << 0, 0, 0; }
-
+		bool operator<(const TypeWithSizedRawData& rhs) const {
+			// 比较x
+			if (rhs.x() - x() > tolerance) return true;
+			if (x() - rhs.x() > tolerance) return false;
+			// x相等，比较y
+			if (rhs.y() - y() > tolerance) return true;
+			if (y() - rhs.y() > tolerance) return false;
+			// y相等，比较z
+			if (rhs.z() - z() > tolerance) return true;
+			return false;
+		}
 		explicit TypeWithSizedRawData(elemT xx, elemT yy, elemT zz)
 			: TypeWithData<dataT, typeT>() 
 		{
@@ -202,7 +231,19 @@ namespace vrt {
 		}
 		elemT lengthSquared() const { return x() * x() + y() * y() + z() * z(); }
 		elemT length() const { return std::sqrt(lengthSquared()); }
+
+		inline static std::vector<typeT> fromFloatVec(std::vector<Float> vec);
 	};
+
+	template <typename elemT, typename dataT, typename typeT>
+	std::vector<typeT> vrt::TypeWithSizedRawData<elemT, dataT, typeT, 3>::fromFloatVec(std::vector<Float> vec)
+	{
+		std::vector<typeT> retvec;
+		for (int i = 0; i < vec.size() / 3; i++) {
+			retvec.push_back(typeT(vec[3 * i], vec[3 * i + 1], vec[3 * i + 2]));
+		}
+		return retvec;
+	}
 
 	template<class T>
 	T  Normalize(const T& rhs) {

@@ -40,11 +40,10 @@ namespace vrt {
 		CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
 		CommonShader::ptr()->enableAttributeArray(attr);
 
-		attr = LineShader::ptr()->attributeLocation("aPos");
-		LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-		LineShader::ptr()->enableAttributeArray(attr);
-
-
+		attr = LightShader::ptr()->attributeLocation("aPos");
+		LightShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		LightShader::ptr()->enableAttributeArray(attr);
+		
 		for (int i = 0; i < lps_.size(); i++) {
 			boundDrawInfo_.push_back(DrawSingleObjInfo(GL_LINE_LOOP,boundPts_.size()/3,lps_[i].size()));
 			for (int j = 0; j < lps_[i].size(); j++) {
@@ -64,9 +63,9 @@ namespace vrt {
 		linevbo->allocate(&boundPts_[0], boundPts_.size() * sizeof(Float));
 
 		attr = -1;
-		attr = CommonShader::ptr()->attributeLocation("aPos");
-		CommonShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
-		CommonShader::ptr()->enableAttributeArray(attr);
+		attr = LineShader::ptr()->attributeLocation("aPos");
+		LineShader::ptr()->setAttributeBuffer(attr, GL_FLOAT, 0, 3, 0);
+		LineShader::ptr()->enableAttributeArray(attr);
 		
 		readyToDraw = true;
 	}
@@ -152,7 +151,7 @@ namespace vrt {
 		if (lps_.empty()) return false;
 		const auto&  pts = lps_[0];
 		if (pts.size() <= 2) return false;
-
+		
 		//判断多边形是否在yz平面上
 		int n = pts.size();
 		double result = 0;
@@ -164,7 +163,7 @@ namespace vrt {
 		if (result > 0.5) axis = 0; //不在yz平面上，选择x轴
 		else axis = 1; //否则选择y轴
 
-		int maxVal = -Infinity;
+		double maxVal = -Infinity;
 		int maxPt = -1;
 		for (int i = 0; i < pts.size();i++) {
 			if (pts[i][axis] > maxVal) {

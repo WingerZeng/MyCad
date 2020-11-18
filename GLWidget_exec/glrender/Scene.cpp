@@ -69,7 +69,7 @@ void Scene::paintGL()
 	PaintInfomation info;
 	info.projMat = camera.getProjMatrix();
 	info.viewMat = camera.getViewMatrix();
-	info.lights.push_back(std::shared_ptr<Light>(new ConstantLight(Vector3f(0.5, 0.5, 0.5), Vector3f(0.9, 0.9, 0.9), Vector3f(0.0f), Point3f(4000, 4000, -5000))));
+	info.lights.push_back(std::shared_ptr<Light>(new ConstantLight(Vector3f(0.5, 0.5, 0.5), Vector3f(0.9, 0.9, 0.9), Vector3f(0.0f), Point3f(4000, 4000, 5000))));
 	
 	if(wfmode_) info.fillmode = FILL_WIREFRAME;
 	else info.fillmode = FILL;

@@ -58,6 +58,7 @@ namespace vrt {
 	class bpEdge;
 	class Primitive;
 	class PPolygonMesh;
+	class PTriMesh;
 
 #ifdef FLOAT_AS_DOUBLE
 	typedef double Float;
@@ -66,9 +67,10 @@ namespace vrt {
 #endif
 
 	// Global Constants
-	static Float MaxFloat = std::numeric_limits<Float>::max();
-	static Float Infinity = std::numeric_limits<Float>::infinity();
-	static Float MachineEpsilon = (std::numeric_limits<Float>::epsilon() * 0.5);
-	static int MAX_LIGHT_COUNT = 10;
-	static Float PI = 3.14159265358979323846;
+	const Float MaxFloat = std::numeric_limits<Float>::max();
+	const Float MinFloat = std::numeric_limits<Float>::min();
+	const Float Infinity = std::numeric_limits<Float>::infinity();
+	const Float MachineEpsilon = (std::numeric_limits<Float>::epsilon() * 0.5);
+	const int MAX_LIGHT_COUNT = 10;
+	const Float PI = 3.14159265358979323846;
 }
