@@ -288,12 +288,12 @@ namespace vrt{
 		return 0;
 	}
 
-	int loopSubdivideTriangles(int id, int nlevels)
+	int loopSubdivideTriangles(int id, int nlevels, bool toLimit)
 	{
 		std::shared_ptr<PTriMesh> tris;
 		MAIPTR->itemMng()->getItem(id, tris);
 		if (!tris) return -1;
-		auto output = loopSubdivideTri(nlevels, tris);
+		auto output = loopSubdivideTri(nlevels, tris, toLimit);
 		MAIPTR->itemMng()->delItem(tris);
 		MAIPTR->itemMng()->addItem(output);
 		//MAIPTR->getScene()->update();
@@ -647,6 +647,7 @@ namespace vrt{
 		bool isBoundary(const LPTopology& tp) const;
 		int valence(const LPTopology& tp) const; //获取点的度
 		bool isRegular(const LPTopology& tp) const;
+		void getVtxAround(LPTopology& tp, std::unique_ptr<Point3f[]>& pts, int& n);
 		handle_lpvertex child(LPTopology& tp) const;
 		int boundAdjVertices(LPTopology& tp , handle_lpvertex& nxtv, handle_lpvertex& pevv) const; //获取边界点的相邻边界点
 
@@ -715,9 +716,9 @@ namespace vrt{
 			fcs[i].v[0] = indices[3 * i];
 			fcs[i].v[1] = indices[3 * i + 1];
 			fcs[i].v[2] = indices[3 * i + 2];
-			vtxs[3 * i].firstFc = i;
-			vtxs[3 * i + 1].firstFc = i;
-			vtxs[3 * i + 2].firstFc = i;
+			vtxs[indices[3 * i]].firstFc = i;
+			vtxs[indices[3 * i + 1]].firstFc = i;
+			vtxs[indices[3 * i + 2]].firstFc = i;
 		}
 
 		for (handle_lpface fc = 0; fc < nfc; fc++) {
@@ -780,6 +781,41 @@ namespace vrt{
 			fc = tp.fcs[fc].pevFace(index);
 		}
 		return count + 1;  //边界点的度数为相邻面数+1
+	}
+
+	void LPVertex::getVtxAround(LPTopology& tp, std::unique_ptr<Point3f[]>& pts, int& n)
+	{
+		n = valence(tp);
+		pts.reset(new Point3f[n]);
+		int count = 0;
+		if (isBoundary(tp)) {
+			handle_lpface fc = firstFc;
+			do {
+				handle_lpface nxtfc = tp.fcs[fc].pevFace(index);
+				if (nxtfc == handle_null) {  //如果遍历到null的三角相邻面，说明遇到边界
+					break;
+				}
+				fc = nxtfc;
+			} while (1);
+			
+			pts[count] = tp.vtxs[tp.fcs[fc].pevVtx(index)].pt;
+			++count;
+
+			while (fc != handle_null) {
+				fc = tp.fcs[fc].nxtFace(index);
+				pts[count] = tp.vtxs[tp.fcs[fc].nxtVtx(index)].pt;
+				++count;
+			}
+		}
+		else {
+			handle_lpface fc = firstFc;
+			do
+			{
+				++count;
+				pts[count] = tp.vtxs[tp.fcs[fc].nxtVtx(index)].pt;
+				fc = tp.fcs[fc].nxtFace(index);
+			} while (fc != firstFc);
+		}
 	}
 
 	vrt::handle_lpvertex LPVertex::child(LPTopology& tp) const
@@ -886,7 +922,7 @@ namespace vrt{
 		LPFace* fc0 = &tp.fcs[fc[0]];
 		LPFace* fc1 = &tp.fcs[fc[1]];
 		fc0->adj[indexInFace(fc0)] = fc[1];
-		fc1->adj[indexInFace(fc0)] = fc[0];
+		fc1->adj[indexInFace(fc1)] = fc[0];
 		return;
 	}
 
@@ -932,22 +968,30 @@ namespace vrt{
 		else return (3. / 8. / valence);
 	}
 
-	std::vector<std::shared_ptr<vrt::Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh)
+	inline Float limitInnerVtxBeta(int valence) {
+		return 1 / (valence + 3. / (8. * innerVtxBeta(valence)));
+	}
+
+	inline constexpr Float limitBoundVtxBeta() {
+		return 0.2;
+	}
+
+	std::vector<std::shared_ptr<vrt::Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh, bool toLimit)
 	{
 		std::unique_ptr<LPTopology> msh(new LPTopology(Point3f::fromFloatVec(triMesh->getPts()), triMesh->getIndices()));
 
 		for (int ilevel = 0; ilevel < nLevels; ilevel++) {
 			std::unique_ptr<LPTopology> newmsh(new LPTopology);
 			newmsh->npt = msh->npt + msh->edges.size();
-			newmsh->npt = msh->npt * 4;
-			newmsh->fcs.reset(new LPFace[newmsh->npt]);
+			newmsh->nfc = msh->nfc * 4;
+			newmsh->fcs.reset(new LPFace[newmsh->nfc]);
 			newmsh->vtxs.reset(new LPVertex[newmsh->npt]);
 
 			newmsh->setupVtxIndex();
 
 			/*生成所有顶点*/
 			//处理子顶点
-			for (handle_lpvertex ipt = 0; ipt < newmsh->npt; ipt++) {
+			for (handle_lpvertex ipt = 0; ipt < msh->npt; ipt++) {
 				LPVertex* pt = &msh->vtxs[ipt];
 				//处理边界点
 				if (pt->isBoundary(*msh)) {
@@ -1005,7 +1049,7 @@ namespace vrt{
 				}
 				//设置子顶点的face属性
 				for (int i = 0; i < 3; i++) {
-					msh->vtxs[pfc->v[i]].firstFc = subf[i];
+					newmsh->vtxs[msh->vtxs[pfc->v[i]].child(*msh)].firstFc = subf[i];
 				}
 				//获取父面的三条边
 				const LPEdge* eg[3];
@@ -1015,7 +1059,7 @@ namespace vrt{
 				//创建中央边
 				const LPEdge* subeg[3];
 				for (int i = 0; i < 3; i++) {
-					subeg[i] = newmsh->getEdge(eg[i]->child(*newmsh), eg[pevIdx(i)]->child(*newmsh));
+					subeg[i] = newmsh->getEdge(eg[i]->child(*msh), eg[pevIdx(i)]->child(*msh));
 					subeg[i]->fc[0] = subf[i];
 					subeg[i]->fc[1] = subf[3];
 				}
@@ -1025,7 +1069,7 @@ namespace vrt{
 					newmsh->fcs[subf[3]].v[i] = ep;
 					newmsh->vtxs[ep].firstFc = subf[3];
 					//子面的相邻关系
-					newmsh->fcs[subf[3]].adj[i] = subf[i];
+					newmsh->fcs[subf[3]].adj[pevIdx(i)] = subf[i];
 					newmsh->fcs[subf[i]].adj[1] = subf[3];
 				}
 				//设置角上3个面
@@ -1044,7 +1088,71 @@ namespace vrt{
 			msh = std::move(newmsh);
 		}
 
-		//TODO 移到极限点
+		//计算极限点属性
+		if (toLimit) {
+			std::vector<Point3f> limitPt(msh->npt); //暂存极限点位置
+			std::vector<Normal3f> normals(msh->npt); //各个点的极限法向
+			for (int i = 0; i < msh->npt; i++) {
+				LPVertex* vtx = &msh->vtxs[i];
+				Vector3f T, S; //切向，副切向
+				if (vtx->isBoundary(*msh)) {
+					//计算边界点极限位置
+					handle_lpvertex v0, v1;
+					vtx->boundAdjVertices(*msh, v0, v1);
+					limitPt[i] = vtx->pt * (1 - 2 * limitBoundVtxBeta()) + limitBoundVtxBeta() * (msh->vtxs[v0].pt + msh->vtxs[v1].pt);
+
+					//计算边界点极限法向
+					int n;
+					std::unique_ptr<Point3f[]> pts;
+					vtx->getVtxAround(*msh, pts, n);
+					S = pts[n - 1] - pts[0];
+					//根据点度数不同，有不同的权重
+					if (n == 2) {
+						T = Vector3f(vtx->pt * -2 + pts[0] + pts[1]);
+					}
+					if (n == 3) {
+						T = Vector3f(vtx->pt * -1 + pts[1]);
+					}
+					if (n == 4) {
+						T = Vector3f(vtx->pt * -2 + (pts[0] + pts[3])*-1 + (pts[1] + pts[2]) * 2);
+					}
+					else {
+						Float theta = PI / (n - 1);
+						Float sinval = std::sin(theta);
+						Float cosval = std::cos(theta);
+						T = Vector3f((pts[0] + pts[n - 1]) * sinval);
+						for (int j = 1; j < n - 1; j++) {
+							T += Vector3f(pts[i] * ((2 * cosval - 2)*std::sin(theta*i)));
+						}
+					}
+				}
+				else {
+					int n = vtx->valence(*msh);
+					double beta = limitInnerVtxBeta(n);
+					handle_lpface fc = vtx->firstFc;
+					Point3f ptsum(0, 0, 0);
+					int count = 0;
+					do
+					{
+						const Point3f& pt = msh->vtxs[msh->fcs[fc].nxtVtx(vtx->index)].pt;
+						ptsum += pt;
+						S += Vector3f(std::cos(2 * PI*count / n) * pt);
+						T += Vector3f(std::sin(2 * PI*count / n) * pt);
+						++count;
+						fc = msh->fcs[fc].nxtFace(vtx->index);
+					} while (fc != vtx->firstFc);
+					limitPt[i] = (1 - count * beta) * vtx->pt + beta * ptsum;
+				}
+				normals[i] = Normal3f(S.cross(T));
+			}
+
+			//#TODO1 将点的极限法向赋予PTriMesh，在绘制时用该法向实现光滑化效果
+
+			for (int i = 0; i < msh->npt; i++) {
+				msh->vtxs[i].pt = limitPt[i];
+			}
+		}
+
 		return std::vector<std::shared_ptr<vrt::Primitive>>{msh->toTriMesh()};
 	}
 #undef  handle_error

@@ -12,7 +12,7 @@ namespace vrt {
 
 	int catmullClarkSubdivTriangles(int id, int nlevels);
 
-	int loopSubdivideTriangles(int id, int nlevels);
+	int loopSubdivideTriangles(int id, int nlevels, bool toLimit);
 	/**
 	 * @brief 将多边形网格进行DooSabin细分
 	 */
@@ -36,5 +36,5 @@ namespace vrt {
 	/**
 	 * @brief 将三角网格进行Loop细分
 	 */
-	std::vector<std::shared_ptr<Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh);
+	std::vector<std::shared_ptr<Primitive>> loopSubdivideTri(int nLevels, std::shared_ptr<PTriMesh> triMesh, bool toLimit);
 }

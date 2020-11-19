@@ -180,8 +180,6 @@ void Scene::delPrimitive(int id)
 		if ((*it)->id() == id) it = primsToAdd.erase(it); // #PERF5 此处如果PrimsToAdd较多，会出现性能问题
 		else it++;
 	}
-	for (int i = 0; i < primsToAdd.size(); i++) {
-	}
 }
 
 void Scene::debugOpenGL()
