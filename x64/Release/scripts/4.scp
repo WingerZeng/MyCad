@@ -1,0 +1,17 @@
+#title
+sweep a face many times.
+#content
+createface {(1,1,0  -1,1,0  -1,-1,0  1,-1,0) (0.5,0.5,0  0.5,0,0  0.3,0,0  0,0.5,0)  (0,0,0  0,-0.3,0  -0.5,-0.5,0  -0.4,-0.1,0  -0.1,0,0)};
+sweep  0  1 0,0.1,1 1;
+sweep  0  1 0.1,0,1 1;
+sweep  0  1 0,0.1,1 1;
+sweep  0  1 0.1,0,1 1;
+sweep  0  1 0,0.1,1 1;
+sweep  0  1 0.1,0,1 1;
+sweep  0  1 0,0.1,1 1;
+sweep  0  1 0.1,0,1 1;
+sweep  0  1 0,0.1,1 1;
+sweep  0  1 0.1,0,1 1;
+toPolygonMesh 0;
+#description
+Create a face. Then sweep it many times. Create a snake-like shape.

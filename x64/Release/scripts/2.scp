@@ -1,0 +1,8 @@
+#title
+A cube with a hole
+#content
+createface {(1,1,0  -1,1,0  -1,-1,0  1,-1,0) (0.5,0.5,0  0.5,-0.5,0  -0.5,-0.5,0  0.3,0,0  -0.5,0.5,0)};
+sweep  0  1 0,0,1 1;
+#description
+Firstly, create a face with two loops by inner Euler operations.
+Then sweep the face to create a cube with hole. 

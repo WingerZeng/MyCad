@@ -1,0 +1,8 @@
+#title
+A cute heart
+#content
+createface {(0,-1,0 1.5,1,0 0.75,2,0 0,1,0 -0.75,2,0 -1.5,1,0)};
+sweep  0  1 0,0,1 1;
+#description
+Firstly, create a face with three loops by inner Euler operations.
+Then sweep the face to create a cube with holes. 

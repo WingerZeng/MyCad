@@ -1,0 +1,12 @@
+#title
+Create two saparate solids
+#content
+createface {(1,1,0  -1,1,0  -1,-1,0  1,-1,0) (0.5,0.5,0  0.5,-0.5,0  -0.5,-0.5,0  0.3,0,0  -0.5,0.5,0)};
+sweep  0  1 0,0,1 1;
+mvfs 2,2,2;
+mev 99 98 2,2,3;
+mev 101 98 2,3,3;
+mef 99 104 98;
+sweep 100 97 -1,0,0 2;
+#description
+Create two saparate solids.
