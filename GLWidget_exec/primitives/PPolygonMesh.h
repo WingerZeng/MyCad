@@ -54,4 +54,3 @@ namespace vrt {
 	//#PERF2 将命令接口整合到一个文件中，并清理文件中的包含Scene等头文件
 	int triangulatePolygonMesh(int id);
 }
-

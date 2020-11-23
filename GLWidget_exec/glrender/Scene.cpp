@@ -19,6 +19,7 @@ Scene::Scene(QWidget* parent)
 	//²ÉÑù±¶Êý
 	format.setSamples(32);
 	this->setFormat(format);
+	wfmode_ = true;
 }
 
 QOpenGLDebugLogger* Scene::logger = nullptr;
